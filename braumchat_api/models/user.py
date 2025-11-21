@@ -17,3 +17,4 @@ class User(BaseEntity):
 
     workspaces = relationship("WorkspaceMember", back_populates="user")
     messages = relationship("Message", back_populates="user")
+    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")

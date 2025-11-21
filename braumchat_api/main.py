@@ -7,6 +7,7 @@ from .api.routes import workspaces as workspaces_router
 from .api.routes import channels as channels_router
 from .api.routes import messages as messages_router
 from .api.routes import realtime as realtime_router
+from .api.routes import direct_messages as dm_router
 
 
 def create_app() -> FastAPI:
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(workspaces_router.router, prefix="/workspaces", tags=["workspaces"])
     app.include_router(channels_router.router, prefix="/channels", tags=["channels"])
     app.include_router(messages_router.router, prefix="", tags=["messages"])  # messages routes include channels path
+    app.include_router(dm_router.router)
     # WebSocket endpoints
     app.include_router(realtime_router.router)
 
