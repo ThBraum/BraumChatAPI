@@ -37,6 +37,7 @@ pytest = "^7.4.0"
 pytest-asyncio = "^0.21.0"
 httpx = { version = "^0.25.0", extras = ["http2"] }
 black = "^24.1.0"
+aiosqlite = "^0.21.0"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
