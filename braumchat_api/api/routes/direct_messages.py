@@ -36,7 +36,9 @@ async def list_threads(
     db: AsyncSession = Depends(get_db_dep),
     user=Depends(get_current_user),
 ):
-    threads = await direct_message_service.list_threads(db, user_id=user.id, workspace_id=workspace_id)
+    threads = await direct_message_service.list_threads(
+        db, user_id=user.id, workspace_id=workspace_id
+    )
     return threads
 
 
@@ -57,8 +59,12 @@ async def list_thread_messages(
 ):
     thread = await _get_thread_or_404(db, thread_id)
     if not direct_message_service.user_in_thread(thread, user.id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not part of this thread")
-    messages = await direct_message_service.list_messages(db, thread_id=thread.id, limit=limit, offset=offset)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not part of this thread"
+        )
+    messages = await direct_message_service.list_messages(
+        db, thread_id=thread.id, limit=limit, offset=offset
+    )
     return messages
 
 
@@ -71,7 +77,9 @@ async def post_thread_message(
 ):
     thread = await _get_thread_or_404(db, thread_id)
     if not direct_message_service.user_in_thread(thread, user.id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not part of this thread")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not part of this thread"
+        )
     message = await direct_message_service.create_direct_message(
         db,
         thread_id=thread.id,

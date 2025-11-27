@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .meta import BaseEntity
@@ -7,7 +7,9 @@ from .meta import BaseEntity
 class DirectMessageThread(BaseEntity):
     __tablename__ = "direct_message_threads"
     __table_args__ = (
-        UniqueConstraint("workspace_id", "user1_id", "user2_id", name="uq_dm_threads_workspace_users"),
+        UniqueConstraint(
+            "workspace_id", "user1_id", "user2_id", name="uq_dm_threads_workspace_users"
+        ),
     )
 
     id = Column(Integer, primary_key=True, index=True)

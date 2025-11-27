@@ -1,5 +1,7 @@
 from typing import List, Optional
-from pydantic import BaseSettings, AnyUrl
+
+from pydantic import AnyUrl, BaseSettings
+
 
 class Settings(BaseSettings):
     DATABASE_URL: str

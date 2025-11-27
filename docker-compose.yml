@@ -35,8 +35,8 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://braumchat:password@db:5432/braumchat}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
       - JWT_SECRET=${JWT_SECRET}
       - CORS_ORIGINS=${CORS_ORIGINS}
     ports:
@@ -47,4 +47,3 @@ services:
 volumes:
   db_data:
   redis_data:
-

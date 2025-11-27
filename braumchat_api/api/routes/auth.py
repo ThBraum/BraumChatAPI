@@ -1,5 +1,5 @@
-from uuid import uuid4
 from typing import List
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -15,13 +15,19 @@ from ...services.user_service import create_user, get_user, get_user_by_email
 
 router = APIRouter()
 
+
 @router.post("/register", response_model=UserRead)
 async def register(payload: UserCreate, db: AsyncSession = Depends(get_db_dep)):
     existing = await get_user_by_email(db, payload.email)
     if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
-    user = await create_user(db, email=payload.email, password=payload.password, display_name=payload.display_name)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+        )
+    user = await create_user(
+        db, email=payload.email, password=payload.password, display_name=payload.display_name
+    )
     return user
+
 
 @router.post("/login", response_model=Token)
 async def login(
@@ -31,7 +37,9 @@ async def login(
 ):
     user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect credentials")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect credentials"
+        )
     session_id = str(uuid4())
     client_ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
@@ -43,7 +51,12 @@ async def login(
         ip_address=client_ip,
     )
     tokens = await create_tokens_for_user(user, session_id=session_id)
-    return {"access_token": tokens["access_token"], "token_type": "bearer", "refresh_token": tokens["refresh_token"]}
+    return {
+        "access_token": tokens["access_token"],
+        "token_type": "bearer",
+        "refresh_token": tokens["refresh_token"],
+    }
+
 
 @router.post("/refresh", response_model=Token)
 async def refresh(payload: TokenRefreshRequest, db: AsyncSession = Depends(get_db_dep)):
@@ -52,10 +65,14 @@ async def refresh(payload: TokenRefreshRequest, db: AsyncSession = Depends(get_d
         user_id = int(token_payload.get("sub"))
         session_id = token_payload.get("sid")
     except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
 
     if not session_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
 
     session = await session_service.get_session_by_sid(db, session_id)
     if not session or session.user_id != user_id or session.revoked_at is not None:
@@ -67,7 +84,12 @@ async def refresh(payload: TokenRefreshRequest, db: AsyncSession = Depends(get_d
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
     tokens = await create_tokens_for_user(user, session_id=session_id)
-    return {"access_token": tokens["access_token"], "token_type": "bearer", "refresh_token": tokens["refresh_token"]}
+    return {
+        "access_token": tokens["access_token"],
+        "token_type": "bearer",
+        "refresh_token": tokens["refresh_token"],
+    }
+
 
 @router.get("/me", response_model=UserRead)
 async def me(user=Depends(get_current_user)):

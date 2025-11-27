@@ -9,7 +9,9 @@ def _ordered_user_ids(user_a: int, user_b: int) -> tuple[int, int]:
     return (user_a, user_b) if user_a < user_b else (user_b, user_a)
 
 
-async def get_or_create_thread(db: AsyncSession, *, workspace_id: int, user_a: int, user_b: int) -> DirectMessageThread:
+async def get_or_create_thread(
+    db: AsyncSession, *, workspace_id: int, user_a: int, user_b: int
+) -> DirectMessageThread:
     if user_a == user_b:
         raise ValueError("Cannot create direct message thread with yourself")
 
@@ -49,7 +51,9 @@ async def list_threads(db: AsyncSession, *, user_id: int, workspace_id: int | No
 
 
 async def get_thread(db: AsyncSession, thread_id: int) -> DirectMessageThread | None:
-    result = await db.execute(select(DirectMessageThread).where(DirectMessageThread.id == thread_id))
+    result = await db.execute(
+        select(DirectMessageThread).where(DirectMessageThread.id == thread_id)
+    )
     return result.scalars().first()
 
 
@@ -69,7 +73,9 @@ async def list_messages(db: AsyncSession, *, thread_id: int, limit: int = 50, of
     return result.scalars().all()
 
 
-async def create_direct_message(db: AsyncSession, *, thread_id: int, sender_id: int, content: str) -> DirectMessage:
+async def create_direct_message(
+    db: AsyncSession, *, thread_id: int, sender_id: int, content: str
+) -> DirectMessage:
     message = DirectMessage(thread_id=thread_id, sender_id=sender_id, content=content)
     db.add(message)
     await db.commit()

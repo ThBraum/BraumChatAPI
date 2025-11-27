@@ -1,10 +1,13 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
+
 
 class WorkspaceCreate(BaseModel):
     name: str
     slug: Optional[str] = None
+
 
 class WorkspaceRead(BaseModel):
     id: int

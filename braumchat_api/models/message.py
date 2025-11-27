@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, Text, DateTime, Boolean, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Text, func
 from sqlalchemy.orm import relationship
 
 from braumchat_api.models.meta import BaseEntity

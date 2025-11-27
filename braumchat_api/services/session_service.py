@@ -29,7 +29,9 @@ async def create_session(
 
 
 async def list_active_sessions(db: AsyncSession, user_id: int) -> List[UserSession]:
-    stmt = select(UserSession).where(UserSession.user_id == user_id, UserSession.revoked_at.is_(None))
+    stmt = select(UserSession).where(
+        UserSession.user_id == user_id, UserSession.revoked_at.is_(None)
+    )
     result = await db.execute(stmt)
     return result.scalars().all()
 

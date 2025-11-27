@@ -1,9 +1,12 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
+
 
 class MessageCreate(BaseModel):
     content: str
+
 
 class MessageRead(BaseModel):
     id: int

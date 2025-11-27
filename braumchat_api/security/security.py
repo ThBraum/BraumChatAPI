@@ -1,21 +1,26 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
+from jose import JWTError, jwt
 from passlib.context import CryptContext
-from jose import jwt, JWTError
 
 from ..config import get_settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 settings = get_settings()
 
+
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
+
 
 def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
-def _encode_token(subject: str, expires_delta: timedelta, additional_claims: Optional[dict] = None) -> str:
+
+def _encode_token(
+    subject: str, expires_delta: timedelta, additional_claims: Optional[dict] = None
+) -> str:
     expire = datetime.utcnow() + expires_delta
     to_encode: dict[str, object] = {"sub": str(subject), "exp": expire}
     if additional_claims:
@@ -43,6 +48,7 @@ def create_refresh_token(
         expires_delta = timedelta(days=settings.REFRESH_TOKEN_EXPIRES_DAYS)
     additional_claims = {"sid": session_id}
     return _encode_token(subject, expires_delta, additional_claims)
+
 
 def decode_token(token: str) -> dict:
     try:
