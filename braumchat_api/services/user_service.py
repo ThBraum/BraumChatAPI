@@ -1,6 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from fastapi import HTTPException, status
+
 from ..models.user import User
 from ..security.security import hash_password
 
@@ -10,9 +12,16 @@ async def create_user(
 ) -> User:
     user = User(email=email, hashed_password=hash_password(password), display_name=display_name)
     db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return user
+    try:
+        await db.commit()
+        await db.refresh(user)
+        return user
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Could not create user: {str(exc)}",
+        )
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
