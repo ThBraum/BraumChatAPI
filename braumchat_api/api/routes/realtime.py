@@ -51,7 +51,9 @@ async def ws_channel(
                     continue
 
                 # Persist message in DB
-                msg = await create_message(db, channel_id=channel_id, user_id=user.id, content=content)
+                msg = await create_message(
+                    db, channel_id=channel_id, user_id=user.id, content=content
+                )
 
                 payload = {
                     "id": msg.id,
@@ -73,7 +75,10 @@ async def ws_channel(
                     channel_key,
                     {
                         "type": "typing",
-                        "payload": {"user_id": user.id, "is_typing": bool(data.get("is_typing", True))},
+                        "payload": {
+                            "user_id": user.id,
+                            "is_typing": bool(data.get("is_typing", True)),
+                        },
                     },
                 )
     except WebSocketDisconnect:
@@ -148,7 +153,10 @@ async def ws_direct_message(
                     channel_key,
                     {
                         "type": "typing",
-                        "payload": {"user_id": user.id, "is_typing": bool(data.get("is_typing", True))},
+                        "payload": {
+                            "user_id": user.id,
+                            "is_typing": bool(data.get("is_typing", True)),
+                        },
                     },
                 )
     except WebSocketDisconnect:

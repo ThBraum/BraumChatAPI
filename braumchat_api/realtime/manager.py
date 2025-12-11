@@ -20,11 +20,15 @@ class ConnectionManager:
 
     async def connect(self, channel_key: str, websocket: WebSocket, user_id: int) -> None:
         await websocket.accept()
-        self.active_connections[channel_key].append(Connection(websocket=websocket, user_id=user_id))
+        self.active_connections[channel_key].append(
+            Connection(websocket=websocket, user_id=user_id)
+        )
 
     async def disconnect(self, channel_key: str, websocket: WebSocket) -> None:
         connections = self.active_connections.get(channel_key, [])
-        self.active_connections[channel_key] = [c for c in connections if c.websocket is not websocket]
+        self.active_connections[channel_key] = [
+            c for c in connections if c.websocket is not websocket
+        ]
         if not self.active_connections[channel_key]:
             self.active_connections.pop(channel_key, None)
 
@@ -42,6 +46,7 @@ class ConnectionManager:
 
     def connected_users(self, channel_key: str) -> List[int]:
         return list({c.user_id for c in self.active_connections.get(channel_key, [])})
+
 
 # singleton manager
 manager = ConnectionManager()
