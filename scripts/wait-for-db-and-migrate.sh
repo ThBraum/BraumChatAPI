@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+log() {
+    echo "[migrate] $*"
+}
+
 MIGRATE_ON_START=${MIGRATE_ON_START:-true}
 MIGRATE_TIMEOUT=${MIGRATE_TIMEOUT:-300}
 MIGRATE_LOCK_TIMEOUT=${MIGRATE_LOCK_TIMEOUT:-600}
 ADVISORY_LOCK_KEY=${ADVISORY_LOCK_KEY:-987654321}
 
+# Monta DATABASE_URL se não vier do ambiente
 if [ -n "${DATABASE_URL:-}" ]; then
     export DATABASE_URL
 else
@@ -17,14 +22,15 @@ else
     export DATABASE_URL="postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 fi
 
+# Extrai host/porta/usuario do DATABASE_URL (para o pg_isready)
 output=$(python - <<'PY'
 import os, urllib.parse as up
-u=up.urlparse(os.environ.get('DATABASE_URL'))
-host=u.hostname or 'db'
-port=str(u.port or 5432)
-user=u.username or 'braumchat'
-pwd=u.password or ''
-dbname=u.path[1:] if u.path else 'braumchat'
+u = up.urlparse(os.environ.get('DATABASE_URL'))
+host = u.hostname or 'db'
+port = str(u.port or 5432)
+user = u.username or 'braumchat'
+pwd = u.password or ''
+dbname = u.path[1:] if u.path else 'braumchat'
 print(host, port, user, pwd, dbname)
 PY
 )
@@ -40,7 +46,7 @@ DB_NAME=${URL_DB:-${DB_NAME:-braumchat}}
 export PGPASSWORD="${DB_PASS}"
 
 if [ "${MIGRATE_ON_START,,}" != "false" ]; then
-    echo "Waiting for Postgres at ${HOST}:${PORT} (user=${DB_USER})..."
+    log "Aguardando Postgres em ${HOST}:${PORT} (usuario=${DB_USER})..."
 
     start_ts=$(date +%s)
     while ! pg_isready -h "$HOST" -p "$PORT" -U "$DB_USER" >/dev/null 2>&1; do
@@ -49,65 +55,82 @@ if [ "${MIGRATE_ON_START,,}" != "false" ]; then
         now=$(date +%s)
         if [ $((now - start_ts)) -ge ${MIGRATE_TIMEOUT} ]; then
             echo
-            echo "Timed out waiting for Postgres after ${MIGRATE_TIMEOUT}s"
+            log "Tempo esgotado aguardando Postgres apos ${MIGRATE_TIMEOUT}s"
             exit 1
         fi
     done
 
     echo
-    echo "Postgres is ready — running migrations..."
-    echo "DATABASE_URL=${DATABASE_URL}"
+    log "Postgres pronto — executando migrations Alembic..."
+    log "DATABASE_URL=${DATABASE_URL}"
 
+    alembic_status=0
     if alembic upgrade head; then
-        echo "Alembic reported success."
+        log "Alembic concluiu com sucesso."
     else
-        echo "Alembic reported failure (non-zero exit). Will attempt fallback." >&2
+        alembic_status=$?
+        log "Alembic retornou erro (${alembic_status}). Tentando fallback incremental." >&2
     fi
-    
+
+    # Garante tabela de versao do Alembic e aplica stamp para o HEAD
     python - <<'PY'
 import os
-import asyncio
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine
-try:
-    from braumchat_api.models.meta import Base
-except Exception:
-    Base = None
+from sqlalchemy import create_engine, text
 
 db_url = os.environ.get('DATABASE_URL')
 if not db_url:
-    print('No DATABASE_URL set, skipping fallback check.')
-    raise SystemExit(0)
+    raise SystemExit('DATABASE_URL nao definido; nao foi possivel criar alembic_version')
 
-engine = create_async_engine(db_url, future=True)
+if '+asyncpg' in db_url:
+    db_url = db_url.replace('+asyncpg', '+psycopg')
 
-async def check_and_create():
-    async with engine.connect() as conn:
-        try:
-            res = await conn.execute(text("select to_regclass('public.users')"))
-            exists = res.scalar()
-        except Exception as e:
-            print('Error checking for users table:', e)
-            exists = None
-
-        if not exists:
-            if Base is None:
-                print('SQLAlchemy Base not importable; cannot create tables automatically.')
-                return
-            print('users table not found — creating tables from metadata')
-            await conn.run_sync(Base.metadata.create_all)
-        else:
-            print('users table exists — no fallback needed')
-
-    await engine.dispose()
-
-asyncio.run(check_and_create())
+engine = create_engine(db_url, future=True)
+with engine.begin() as conn:
+    conn.execute(text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) NOT NULL)"))
+print('Tabela alembic_version garantida.')
 PY
 
-    echo "Migrations finished (or fallback applied)."
+    if ! alembic stamp head; then
+        log "Falha ao fazer stamp do Alembic. Verifique logs." >&2
+    fi
+
+    # Fallback: cria apenas as tabelas que estiverem faltando
+    python - <<'PY'
+import os
+from sqlalchemy import create_engine, inspect
+
+try:
+    import braumchat_api.models  # registra modelos
+    from braumchat_api.models.meta import Base
+except Exception as exc:
+    print('Nao foi possivel importar modelos:', exc)
+    raise SystemExit(1)
+
+db_url = os.environ.get('DATABASE_URL')
+if not db_url:
+    raise SystemExit('DATABASE_URL nao definido; nao foi possivel criar tabelas faltantes')
+
+if '+asyncpg' in db_url:
+    db_url = db_url.replace('+asyncpg', '+psycopg')
+
+engine = create_engine(db_url, future=True)
+insp = inspect(engine)
+existing = set(insp.get_table_names(schema='public'))
+all_tables = set(Base.metadata.tables.keys())
+missing_names = sorted(all_tables - existing)
+
+if missing_names:
+    missing = [Base.metadata.tables[name] for name in missing_names]
+    print('Criando tabelas faltantes:', missing_names)
+    Base.metadata.create_all(engine, tables=missing)
+else:
+    print('Nenhuma tabela faltante; nada a criar via fallback.')
+PY
+
+    log "Migrations finalizadas (com fallback se necessario)."
 else
-    echo "MIGRATE_ON_START is false — skipping migrations."
+    log "MIGRATE_ON_START=false — migrations puladas."
 fi
 
-echo "Starting app..."
+log "Iniciando aplicacao..."
 exec "$@"
