@@ -3,9 +3,9 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_DB: braumchat
-      POSTGRES_USER: braumchat
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${POSTGRES_DB:-braumchat}
+      POSTGRES_USER: ${POSTGRES_USER:-braumchat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     ports:
       - "5432:5432"
     volumes:
@@ -37,8 +37,8 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://braumchat:password@db:5432/braumchat}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
-      - JWT_SECRET=${JWT_SECRET}
-      - CORS_ORIGINS=${CORS_ORIGINS}
+      - JWT_SECRET=${JWT_SECRET:-3205663f8d86cb7b77d3c991fb973744017a40079c9144d13e292c43695c8bda}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
     ports:
       - "8000:8000"
     volumes:
@@ -51,13 +51,13 @@ services:
     depends_on:
       - api
     environment:
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
-      - VITE_WS_URL=${VITE_WS_URL:-ws://locahost:8000}
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+      - NODE_ENV=${NODE_ENV:-development}
     ports:
-      - "5173:5173"
+      - "3000:3000"
     volumes:
       - ./frontend:/app
-    command: ["sh", "-c", "npm install && npm run dev -- --host 0.0.0.0 --port 5173"]
+    command: ["npm", "run", "dev", "--", "-H", "0.0.0.0", "-p", "3000"]
 
 volumes:
   db_data:

@@ -1,0 +1,20 @@
+{
+    "appName": "ChattingWork",
+    "loading": "Carregando...",
+    "search": "Buscar",
+    "language": "Idioma",
+    "theme": "Tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "soon": "em breve",
+    "status": {
+        "online": "Disponível",
+        "offline": "Offline",
+        "typing": "digitando..."
+    },
+    "placeholders": {
+        "search": "Busque por nome ou canal"
+    }
+}
