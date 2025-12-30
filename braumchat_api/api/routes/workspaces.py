@@ -9,7 +9,12 @@ from ...schemas.invite import WorkspaceInviteCreate, WorkspaceInviteRead
 from ...schemas.workspace import WorkspaceCreate, WorkspaceRead
 from ...services import invite_service
 from ...services.user_service import get_user_by_display_name
-from ...services.workspace_service import create_workspace, get_workspace, list_workspaces
+from ...services.workspace_service import (
+    create_workspace,
+    get_workspace,
+    get_workspace_member,
+    list_workspaces,
+)
 from ...realtime.manager import manager
 
 router = APIRouter()
@@ -37,6 +42,11 @@ async def get_one(
     ws = await get_workspace(db, workspace_id)
     if not ws:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if ws.owner_id != user.id:
+        membership = await get_workspace_member(db, workspace_id=workspace_id, user_id=user.id)
+        if not membership:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     return ws
 
 

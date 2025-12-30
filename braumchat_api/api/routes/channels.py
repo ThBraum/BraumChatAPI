@@ -8,6 +8,7 @@ from ...db.redis import redis as redis_client
 from ...schemas.channel import ChannelCreate, ChannelRead
 from ...services import presence_service
 from ...services.channel_service import create_channel, get_channel, list_channels
+from ...services.workspace_service import get_workspace_member
 from ...services.user_service import list_users_by_ids
 
 router = APIRouter()
@@ -20,6 +21,9 @@ async def create(
     db: AsyncSession = Depends(get_db_dep),
     user=Depends(get_current_user),
 ):
+    membership = await get_workspace_member(db, workspace_id=workspace_id, user_id=user.id)
+    if not membership:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     ch = await create_channel(
         db, workspace_id=workspace_id, name=payload.name, is_private=payload.is_private
     )
@@ -30,6 +34,9 @@ async def create(
 async def list_all(
     workspace_id: int, db: AsyncSession = Depends(get_db_dep), user=Depends(get_current_user)
 ):
+    membership = await get_workspace_member(db, workspace_id=workspace_id, user_id=user.id)
+    if not membership:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     return await list_channels(db, workspace_id)
 
 
@@ -40,6 +47,9 @@ async def get_one(
     ch = await get_channel(db, channel_id)
     if not ch:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    membership = await get_workspace_member(db, workspace_id=ch.workspace_id, user_id=user.id)
+    if not membership:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     return ch
 
 
@@ -50,6 +60,12 @@ async def get_channel_presence(
     channel = await get_channel(db, channel_id)
     if not channel:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    membership = await get_workspace_member(
+        db, workspace_id=channel.workspace_id, user_id=user.id
+    )
+    if not membership:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     online_user_ids = await presence_service.list_users(
         redis_client, channel.workspace_id, channel.id

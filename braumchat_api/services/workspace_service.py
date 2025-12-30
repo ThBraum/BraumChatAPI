@@ -5,6 +5,26 @@ from ..models.workspace import Workspace
 from ..models.workspace_member import WorkspaceMember
 
 
+async def get_workspace_member(
+    db: AsyncSession, *, workspace_id: int, user_id: int
+) -> WorkspaceMember | None:
+    q = await db.execute(
+        select(WorkspaceMember).where(
+            WorkspaceMember.workspace_id == workspace_id,
+            WorkspaceMember.user_id == user_id,
+        )
+    )
+    return q.scalars().first()
+
+
+async def is_user_in_workspace(db: AsyncSession, *, workspace_id: int, user_id: int) -> bool:
+    return (await get_workspace_member(db, workspace_id=workspace_id, user_id=user_id)) is not None
+
+
+def is_workspace_admin_role(role: str | None) -> bool:
+    return role in {"owner", "admin"}
+
+
 async def create_workspace(
     db: AsyncSession, owner_id: int, name: str, slug: str | None = None
 ) -> Workspace:

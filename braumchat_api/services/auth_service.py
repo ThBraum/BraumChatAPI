@@ -20,6 +20,8 @@ async def authenticate_user(db: AsyncSession, email: str, password: str):
 async def create_tokens_for_user(
     user, *, session_id: str, access_expires: timedelta | None = None
 ):
-    access = create_access_token(str(user.id), expires_delta=access_expires)
+    access = create_access_token(
+        str(user.id), expires_delta=access_expires, additional_claims={"sid": session_id}
+    )
     refresh = create_refresh_token(str(user.id), session_id=session_id)
     return {"access_token": access, "refresh_token": refresh}

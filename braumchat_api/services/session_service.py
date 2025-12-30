@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy import select
@@ -20,7 +20,7 @@ async def create_session(
         session_id=session_id,
         user_agent=user_agent,
         ip_address=ip_address,
-        last_seen_at=datetime.utcnow(),
+        last_seen_at=datetime.now(timezone.utc),
     )
     db.add(session)
     await db.commit()
@@ -47,7 +47,7 @@ async def revoke_session(db: AsyncSession, user_id: int, session_id: str) -> Opt
     if not session or session.user_id != user_id:
         return None
     if session.revoked_at is None:
-        session.revoked_at = datetime.utcnow()
+        session.revoked_at = datetime.now(timezone.utc)
         await db.commit()
         await db.refresh(session)
     return session
@@ -56,5 +56,30 @@ async def revoke_session(db: AsyncSession, user_id: int, session_id: str) -> Opt
 async def touch_session(db: AsyncSession, session_id: str) -> None:
     session = await get_session_by_sid(db, session_id)
     if session and session.revoked_at is None:
-        session.last_seen_at = datetime.utcnow()
+        session.last_seen_at = datetime.now(timezone.utc)
         await db.commit()
+
+
+async def rotate_session(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    old_session_id: str,
+    new_session_id: str,
+) -> Optional[UserSession]:
+    old = await get_session_by_sid(db, old_session_id)
+    if not old or old.user_id != user_id or old.revoked_at is not None:
+        return None
+
+    old.revoked_at = datetime.now(timezone.utc)
+    new = UserSession(
+        user_id=user_id,
+        session_id=new_session_id,
+        user_agent=old.user_agent,
+        ip_address=old.ip_address,
+        last_seen_at=datetime.now(timezone.utc),
+    )
+    db.add(new)
+    await db.commit()
+    await db.refresh(new)
+    return new

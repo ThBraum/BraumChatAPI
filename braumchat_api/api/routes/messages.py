@@ -9,8 +9,13 @@ from ...schemas.message import MessageCreate, MessageRead
 from ...services.message_service import create_message, list_messages
 from ...realtime.manager import manager
 from ...models.channel import Channel
+from ...services.workspace_service import get_workspace_member
+from ...config import get_settings
+from ...db.redis import redis as redis_client
+from ...security.rate_limit import RateLimitRule, enforce_rate_limit
 
 router = APIRouter()
+settings = get_settings()
 
 
 @router.get(
@@ -24,6 +29,12 @@ async def get_messages(
     db: AsyncSession = Depends(get_db_dep),
     user=Depends(get_current_user),
 ):
+    channel = await db.get(Channel, channel_id)
+    if not channel:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    membership = await get_workspace_member(db, workspace_id=channel.workspace_id, user_id=user.id)
+    if not membership:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     return await list_messages(db, channel_id=channel_id, limit=limit)
 
 
@@ -38,6 +49,21 @@ async def post_message(
     db: AsyncSession = Depends(get_db_dep),
     user=Depends(get_current_user),
 ):
+    channel = await db.get(Channel, channel_id)
+    if not channel:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    membership = await get_workspace_member(db, workspace_id=channel.workspace_id, user_id=user.id)
+    if not membership:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    await enforce_rate_limit(
+        redis=redis_client,
+        key=f"rl:msg:post:u:{user.id}:c:{channel_id}",
+        rule=RateLimitRule(
+            limit=settings.RATE_LIMIT_POST_MESSAGE_PER_10_SECONDS, window_seconds=10
+        ),
+        fail_open=settings.RATE_LIMIT_FAIL_OPEN,
+    )
     msg = await create_message(db, channel_id=channel_id, user_id=user.id, content=payload.content)
 
     author = msg.user
@@ -59,13 +85,9 @@ async def post_message(
 
     # Broadcast realtime (best-effort).
     try:
-        workspace_id = await db.scalar(select(Channel.workspace_id).where(Channel.id == channel_id))
-        if workspace_id is None:
-            return ws_payload
-
         # O padrão da chave segue o ws_channel em realtime.py.
         await manager.broadcast(
-            f"chat:w:{int(workspace_id)}:c:{channel_id}",
+            f"chat:w:{int(channel.workspace_id)}:c:{channel_id}",
             {"type": "message", "payload": ws_payload},
         )
     except Exception:
