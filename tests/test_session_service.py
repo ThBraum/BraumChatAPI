@@ -6,7 +6,7 @@ from braumchat_api.services import session_service
 
 @pytest.mark.asyncio
 async def test_session_lifecycle(db_session):
-    user = User(email="user@example.com", hashed_password="x")
+    user = User(email="user@example.com", username="user", hashed_password="x")
     db_session.add(user)
     await db_session.commit()
 
