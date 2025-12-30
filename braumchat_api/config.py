@@ -14,6 +14,13 @@ class Settings(BaseSettings):
     ENV: str = "development"
     GOOGLE_CLIENT_ID: Optional[str] = None
 
+    # Rate limiting (Redis)
+    RATE_LIMIT_FAIL_OPEN: bool = True
+    RATE_LIMIT_LOGIN_PER_MINUTE: int = 10
+    RATE_LIMIT_REFRESH_PER_MINUTE: int = 30
+    RATE_LIMIT_REGISTER_PER_HOUR: int = 20
+    RATE_LIMIT_POST_MESSAGE_PER_10_SECONDS: int = 20
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

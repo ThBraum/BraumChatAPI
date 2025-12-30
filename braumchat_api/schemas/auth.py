@@ -19,6 +19,10 @@ class TokenRefreshRequest(BaseModel):
     refresh_token: str
 
 
+class LogoutRequest(BaseModel):
+    refresh_token: Optional[str] = None
+
+
 class UserSessionRead(BaseModel):
     session_id: str
     user_agent: Optional[str]

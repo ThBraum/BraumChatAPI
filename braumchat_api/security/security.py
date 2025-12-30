@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from jose import JWTError, jwt
@@ -21,7 +21,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 def _encode_token(
     subject: str, expires_delta: timedelta, additional_claims: Optional[dict] = None
 ) -> str:
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(timezone.utc) + expires_delta
     to_encode: dict[str, object] = {"sub": str(subject), "exp": expire}
     if additional_claims:
         to_encode.update(additional_claims)
