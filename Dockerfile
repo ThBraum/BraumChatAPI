@@ -13,13 +13,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir poetry==1.6.1
+RUN pip install --no-cache-dir poetry==2.1.4
 
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock* /app/
 
-RUN poetry install --no-dev --no-root
+RUN poetry install --without dev --no-root
 
 COPY . /app
 

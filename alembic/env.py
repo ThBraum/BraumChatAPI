@@ -44,7 +44,7 @@ def run_migrations_online() -> None:
     connectable = create_async_engine(db_url, future=True)
 
     async def run():
-        async with connectable.connect() as connection:
+        async with connectable.begin() as connection:
             lock_key = int(os.getenv("ADVISORY_LOCK_KEY", "987654321"))
             lock_timeout = int(os.getenv("MIGRATE_LOCK_TIMEOUT", "600"))
             start = time.time()

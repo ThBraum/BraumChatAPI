@@ -48,8 +48,43 @@ export PGPASSWORD="${DB_PASS}"
 if [ "${MIGRATE_ON_START,,}" != "false" ]; then
     log "Aguardando Postgres em ${HOST}:${PORT} (usuario=${DB_USER})..."
 
+    if command -v getent >/dev/null 2>&1; then
+        log "DNS ${HOST}: $(getent hosts "${HOST}" | tr '\n' ' ' || true)"
+    fi
+
+    if ! command -v pg_isready >/dev/null 2>&1; then
+        log "pg_isready nao encontrado; usando fallback TCP para aguardar o Postgres."
+    fi
+
     start_ts=$(date +%s)
-    while ! pg_isready -h "$HOST" -p "$PORT" -U "$DB_USER" >/dev/null 2>&1; do
+    while true; do
+        ready=false
+
+        if command -v pg_isready >/dev/null 2>&1; then
+            if pg_isready -h "$HOST" -p "$PORT" -U "$DB_USER" -d "$DB_NAME" -t 1 >/dev/null 2>&1; then
+                ready=true
+            fi
+        else
+            ready=false
+        fi
+
+        if [ "$ready" = false ]; then
+            if python - <<PY >/dev/null 2>&1
+import os, socket
+host = os.environ.get('HOST') or 'db'
+port = int(os.environ.get('PORT') or 5432)
+s = socket.create_connection((host, port), timeout=1)
+s.close()
+PY
+            then
+                ready=true
+            fi
+        fi
+
+        if [ "$ready" = true ]; then
+            break
+        fi
+
         printf '.'
         sleep 1
         now=$(date +%s)
@@ -61,57 +96,87 @@ if [ "${MIGRATE_ON_START,,}" != "false" ]; then
     done
 
     echo
-    log "Postgres pronto — executando migrations Alembic..."
+    log "Postgres pronto — preparando schema e executando migrations Alembic..."
     log "DATABASE_URL=${DATABASE_URL}"
 
-    alembic_status=0
-    if alembic upgrade head; then
-        log "Alembic concluiu com sucesso."
-    else
-        alembic_status=$?
-        log "Alembic retornou erro (${alembic_status}). Tentando fallback incremental." >&2
-    fi
+    export DATABASE_URL_SYNC="${DATABASE_URL/+asyncpg/+psycopg}"
 
-    # Garante tabela de versao do Alembic e aplica stamp para o HEAD
     python - <<'PY'
 import os
 from sqlalchemy import create_engine, text
 
-db_url = os.environ.get('DATABASE_URL')
+db_url = os.environ.get('DATABASE_URL_SYNC')
 if not db_url:
-    raise SystemExit('DATABASE_URL nao definido; nao foi possivel criar alembic_version')
-
-if '+asyncpg' in db_url:
-    db_url = db_url.replace('+asyncpg', '+psycopg')
+    raise SystemExit('DATABASE_URL_SYNC nao definido')
 
 engine = create_engine(db_url, future=True)
 with engine.begin() as conn:
-    conn.execute(text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) NOT NULL)"))
-print('Tabela alembic_version garantida.')
+    # adiciona users.username se estiver faltando
+    col_exists = conn.execute(
+        text(
+            """
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema='public' AND table_name='users' AND column_name='username'
+            """
+        )
+    ).first()
+    if not col_exists:
+        # coluna nullable; a app exige no request, mas DB tolera NULL para dados antigos
+        conn.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR(32)"))
+        # unique simples (create_user salva lower())
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_username ON users (username)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_username_lookup ON users (lower(username))"))
+        print('Reparo aplicado: users.username + indices')
+    else:
+        print('Reparo nao necessario: users.username ja existe')
 PY
 
-    if ! alembic stamp head; then
-        log "Falha ao fazer stamp do Alembic. Verifique logs." >&2
-    fi
+    baseline_info=$(python - <<'PY'
+import os
+from sqlalchemy import create_engine, text
 
-    # Fallback: cria apenas as tabelas que estiverem faltando
-    python - <<'PY'
+db_url = os.environ.get('DATABASE_URL_SYNC')
+engine = create_engine(db_url, future=True)
+
+with engine.begin() as conn:
+    has_alembic_version = conn.execute(
+        text("SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='alembic_version'")
+    ).first() is not None
+
+    if has_alembic_version:
+        version = conn.execute(text("SELECT version_num FROM alembic_version LIMIT 1")).scalar()
+    else:
+        version = None
+
+    users_exists = conn.execute(
+        text("SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='users'")
+    ).first() is not None
+
+print((version or '__empty__'), ('1' if users_exists else '0'))
+PY
+)
+
+    read CURRENT_REV USERS_EXISTS <<< "$baseline_info"
+
+    if [ "${USERS_EXISTS:-0}" = "1" ] && [ "${CURRENT_REV:-__empty__}" = "__empty__" ]; then
+        log "DB existente sem historico do Alembic — fazendo stamp head e criando tabelas faltantes"
+        alembic stamp head
+
+        python - <<'PY'
 import os
 from sqlalchemy import create_engine, inspect
 
 try:
-    import braumchat_api.models  # registra modelos
+    import braumchat_api.models  # noqa: F401
     from braumchat_api.models.meta import Base
 except Exception as exc:
     print('Nao foi possivel importar modelos:', exc)
     raise SystemExit(1)
 
-db_url = os.environ.get('DATABASE_URL')
+db_url = os.environ.get('DATABASE_URL_SYNC')
 if not db_url:
-    raise SystemExit('DATABASE_URL nao definido; nao foi possivel criar tabelas faltantes')
-
-if '+asyncpg' in db_url:
-    db_url = db_url.replace('+asyncpg', '+psycopg')
+    raise SystemExit('DATABASE_URL_SYNC nao definido')
 
 engine = create_engine(db_url, future=True)
 insp = inspect(engine)
@@ -126,8 +191,11 @@ if missing_names:
 else:
     print('Nenhuma tabela faltante; nada a criar via fallback.')
 PY
+    else
+        alembic upgrade head
+    fi
 
-    log "Migrations finalizadas (com fallback se necessario)."
+    log "Migrations finalizadas."
 else
     log "MIGRATE_ON_START=false — migrations puladas."
 fi
