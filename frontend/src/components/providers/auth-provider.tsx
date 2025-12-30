@@ -97,12 +97,22 @@ export const AuthProvider = ({
                     },
                     cache: "no-store",
                 });
-                if (!response.ok) throw new Error("Unable to fetch profile");
+                if (response.status === 401) {
+                    setUser(null);
+                    setTokens(null);
+                    return;
+                }
+
+                if (!response.ok) {
+                    setUser(null);
+                    return;
+                }
+
                 const profile = await response.json();
                 setUser(profile);
-            } catch {
+            } catch (err) {
+                console.error("Unable to fetch profile", err);
                 setUser(null);
-                setTokens(null);
             } finally {
                 setIsLoading(false);
             }
@@ -205,13 +215,13 @@ export const AuthProvider = ({
             const tokens = (await response.json()) as AuthTokens;
             setTokens(tokens);
             await fetchProfile(tokens.access_token);
-            router.push("/");
+            router.push("/app");
         },
         [fetchProfile, router, setTokens],
     );
 
     const register = useCallback(
-        async (payload: { email: string; password: string; display_name?: string }) => {
+        async (payload: { email: string; password: string; display_name: string }) => {
             const response = await fetch(buildUrl("/auth/register"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -221,10 +231,9 @@ export const AuthProvider = ({
                 const message = await response.text();
                 throw new Error(message || "Unable to register");
             }
-            // Intencionalmente NÃO chamamos login aqui; fluxo passa para a tela principal após sucesso.
-            return (await response.json()) as User;
+            await login({ email: payload.email, password: payload.password });
         },
-        [],
+        [login],
     );
 
     const value = useMemo(

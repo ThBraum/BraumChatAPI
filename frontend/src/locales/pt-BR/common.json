@@ -1,5 +1,6 @@
 {
     "appName": "ChattingWork",
+    "backendUnavailable": "Backend indisponível em {{url}} — algumas funcionalidades podem falhar.",
     "loading": "Carregando...",
     "search": "Buscar",
     "language": "Idioma",
@@ -13,6 +14,54 @@
         "online": "Disponível",
         "offline": "Offline",
         "typing": "digitando..."
+    },
+    "labels": {
+        "id": "id"
+    ,
+    "from": "de"
+    },
+    "tabs": {
+        "workspaces": "Workspaces",
+        "contacts": "Contatos",
+        "directMessages": "Mensagens diretas"
+    },
+    "workspaces": {
+        "title": "Workspaces",
+        "create": "Criar",
+        "namePrompt": "Nome do workspace",
+        "slugPrompt": "Slug (opcional)",
+        "active": "Ativo",
+        "select": "Selecionar",
+        "empty": "Nenhum workspace ainda."
+    },
+    "contacts": {
+        "title": "Contatos",
+        "searchPlaceholder": "Buscar por display username (mín. 2)",
+        "searching": "Buscando...",
+        "invite": "Convidar",
+        "openDm": "Abrir DM",
+        "selectWorkspaceFirst": "Selecione um workspace primeiro",
+        "inviteTitle": "Convidar para o workspace ativo",
+        "openDmTitle": "Abrir uma DM",
+        "noUsersFound": "Nenhum usuário encontrado.",
+        "minChars": "Digite pelo menos 2 caracteres."
+    },
+    "invites": {
+        "accept": "Aceitar",
+        "decline": "Recusar",
+        "none": "Nenhum convite pendente.",
+        "sent": "Convite enviado.",
+        "error": "Falha ao enviar convite: {{message}}",
+        "prompt": "Display name para convidar",
+        "title": "Convidar por display name"
+    },
+    "directMessages": {
+        "title": "Mensagens diretas",
+        "empty": "Nenhuma mensagem direta ainda.",
+        "open": "Abrir"
+    },
+    "protected": {
+        "loading": "Carregando..."
     },
     "placeholders": {
         "search": "Busque por nome ou canal"

@@ -24,7 +24,7 @@ export const TopNav = ({ workspaces, isLoadingWorkspaces }: TopNavProps) => {
         <header className="flex flex-col border-b bg-card/40 backdrop-blur supports-[backdrop-filter]:bg-card/70">
             <div className="flex h-14 items-center justify-between gap-4 px-4">
                 <div className="flex items-center gap-3">
-                    <Link href="/" className="text-lg font-semibold tracking-tight">
+                    <Link href="/app" className="text-lg font-semibold tracking-tight">
                         {appName}
                     </Link>
                     <select

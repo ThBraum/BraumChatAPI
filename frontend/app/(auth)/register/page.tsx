@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -13,12 +13,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useSnackbar } from "@/components/providers/snackbar-provider";
+import { registerSchema } from "@/lib/validation";
+
+const extractApiDetail = (raw: string): string | null => {
+    const trimmed = raw?.trim();
+    if (!trimmed) return null;
+    try {
+        const parsed = JSON.parse(trimmed) as { detail?: unknown };
+        if (typeof parsed?.detail === "string" && parsed.detail.trim()) return parsed.detail.trim();
+    } catch {
+        // ignore
+    }
+    return null;
+};
 
 export default function RegisterPage() {
     const formRef = useRef<HTMLFormElement | null>(null);
     const { register: registerUser } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { t } = useTranslation(["auth", "common"]);
+    const { showSnackbar } = useSnackbar();
+
+    const friendInviteDisplayName = searchParams.get("friend")?.trim() || null;
 
     const [displayName, setDisplayName] = useState("");
     const [email, setEmail] = useState("");
@@ -26,7 +44,6 @@ export default function RegisterPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -51,38 +68,80 @@ export default function RegisterPage() {
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         setIsSubmitting(true);
-        setSuccess(null);
+        setError(null);
 
         if (!displayName?.trim() || !email?.trim() || !password || !confirmPassword) {
-            setError(t("auth:register.requiredFields") ?? "All fields are required");
+            setError(t("auth:register.requiredFields"));
             setIsSubmitting(false);
             return;
         }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError(t("auth:register.invalidEmail") ?? "Invalid email format");
-            setIsSubmitting(false);
-            return;
-        }
-
+        const normalizedDisplayName = displayName.trim();
         if (password !== confirmPassword) {
-            setError(t("auth:register.passwordMismatch") ?? "Passwords do not match");
+            setError(t("auth:register.passwordMismatch"));
             setIsSubmitting(false);
             return;
         }
+
+        if (normalizedDisplayName.length < 2 || normalizedDisplayName.length > 32 || normalizedDisplayName.includes("#")) {
+            setError(t("auth:register.invalidDisplayName"));
+            setIsSubmitting(false);
+            return;
+        }
+
+        const parsed = registerSchema.safeParse({
+            display_name: normalizedDisplayName,
+            email: email.trim(),
+            password,
+        });
+        if (!parsed.success) {
+            const issues = parsed.error.formErrors.fieldErrors;
+            if (issues.email && issues.email.length) {
+                setError(t("auth:register.invalidEmail"));
+            } else if (issues.password && issues.password.length) {
+                setError(t("auth:login.passwordMin"));
+            } else {
+                setError(t("auth:register.requiredFields"));
+            }
+            setIsSubmitting(false);
+            return;
+        }
+
         setError(null);
         try {
             await registerUser({
                 email,
                 password,
-                display_name: displayName,
+                display_name: normalizedDisplayName,
+            }, {
+                friendInviteDisplayName: friendInviteDisplayName ?? undefined,
+                redirectTo: friendInviteDisplayName ? "/app/direct-messages?tab=invite" : "/app",
             });
-            setSuccess(t("auth:register.success") ?? "Account created! Redirecting...");
+            showSnackbar({
+                variant: "success",
+                title: t("auth:snackbar.successTitle"),
+                message: t("auth:snackbar.registerSuccess"),
+            });
             setConfirmPassword("");
-            router.push("/");
         } catch (err) {
-            setError((err as Error)?.message ?? t("auth:login.error") ?? "Register failed");
+            const raw = (err as Error)?.message ?? "";
+            const detail = extractApiDetail(raw);
+            const isInvalidCreds =
+                /incorrect\s+credentials/i.test(raw) ||
+                /invalid\s+credentials/i.test(raw) ||
+                /incorrect\s+credentials/i.test(detail ?? "");
+
+            const isInvalidDisplayName = /display name/i.test(detail ?? "") || /display name/i.test(raw);
+
+            showSnackbar({
+                variant: "error",
+                title: t("auth:snackbar.errorTitle"),
+                message: isInvalidCreds
+                    ? t("auth:snackbar.invalidCredentials")
+                    : isInvalidDisplayName
+                      ? t("auth:register.invalidDisplayName")
+                    : t("auth:snackbar.genericError"),
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -153,11 +212,10 @@ export default function RegisterPage() {
                             <div className="grid gap-4 min-w-0 sm:grid-cols-3">
                                 {stats.map((stat) => {
                                     const hasDetail = Boolean(stat.detail);
-                                    const cardClasses = `rounded-2xl border border-border/60 bg-card/40 p-6 text-center flex flex-col items-center justify-center min-h-[5.25rem] w-full overflow-hidden ${
-                                        hasDetail
+                                    const cardClasses = `rounded-2xl border border-border/60 bg-card/40 p-6 text-center flex flex-col items-center justify-center min-h-[5.25rem] w-full overflow-hidden ${hasDetail
                                             ? "max-w-full md:max-w-[14rem] lg:max-w-[20rem]"
                                             : "max-w-full md:max-w-[11rem] lg:max-w-[14rem]"
-                                    }`;
+                                        }`;
                                     const numberClasses = `${hasDetail ? "text-lg md:text-xl lg:text-2xl" : "text-xl md:text-2xl lg:text-3xl"} font-semibold leading-tight max-w-full break-words`;
 
                                     return (
@@ -181,9 +239,17 @@ export default function RegisterPage() {
                                 <p className="text-sm text-muted-foreground">{t("auth:register.subtitle")}</p>
                             </CardHeader>
                             <CardContent>
-                                <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+                                <form ref={formRef} onSubmit={handleSubmit} className="space-y-5" noValidate>
+                                    {friendInviteDisplayName && (
+                                        <div className="rounded-lg border border-border/60 bg-card/40 px-4 py-3 text-sm">
+                                            <span className="text-muted-foreground">
+                                                {t("auth:register.friendInviteHint", {
+                                                    displayName: friendInviteDisplayName,
+                                                })}
+                                            </span>
+                                        </div>
+                                    )}
                                     {error && <p className="text-sm text-destructive">{error}</p>}
-                                    {success && <div className="text-sm text-emerald-400 font-semibold">{success}</div>}
                                     <div className="space-y-2">
                                         <Label htmlFor="displayName" className="inline-flex items-center gap-1">
                                             {t("auth:register.displayName")}
@@ -193,7 +259,6 @@ export default function RegisterPage() {
                                             id="displayName"
                                             value={displayName}
                                             onChange={(event) => setDisplayName(event.target.value)}
-                                            required
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -207,7 +272,6 @@ export default function RegisterPage() {
                                             autoComplete="email"
                                             value={email}
                                             onChange={(event) => setEmail(event.target.value)}
-                                            required
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -222,14 +286,13 @@ export default function RegisterPage() {
                                                 autoComplete="new-password"
                                                 value={password}
                                                 onChange={(event) => setPassword(event.target.value)}
-                                                required
                                                 className="pr-10"
                                             />
                                             <button
                                                 type="button"
                                                 className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground"
                                                 onClick={() => setShowPassword((prev) => !prev)}
-                                                aria-label={showPassword ? t("auth:register.hidePassword") ?? "Hide password" : t("auth:register.showPassword") ?? "Show password"}
+                                                aria-label={showPassword ? t("auth:register.hidePassword") : t("auth:register.showPassword")}
                                             >
                                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                             </button>
@@ -247,14 +310,13 @@ export default function RegisterPage() {
                                                 autoComplete="new-password"
                                                 value={confirmPassword}
                                                 onChange={(event) => setConfirmPassword(event.target.value)}
-                                                required
                                                 className="pr-10"
                                             />
                                             <button
                                                 type="button"
                                                 className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground"
                                                 onClick={() => setShowConfirmPassword((prev) => !prev)}
-                                                aria-label={showConfirmPassword ? t("auth:register.hidePassword") ?? "Hide password" : t("auth:register.showPassword") ?? "Show password"}
+                                                aria-label={showConfirmPassword ? t("auth:register.hidePassword") : t("auth:register.showPassword")}
                                             >
                                                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                             </button>

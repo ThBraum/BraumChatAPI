@@ -1,8 +1,11 @@
 from sqlalchemy import and_, or_, select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from ..models.direct_message import DirectMessage
 from ..models.direct_message_thread import DirectMessageThread
+from ..models.user import User
 
 
 def _ordered_user_ids(user_a: int, user_b: int) -> tuple[int, int]:
@@ -16,14 +19,37 @@ async def get_or_create_thread(
         raise ValueError("Cannot create direct message thread with yourself")
 
     user1_id, user2_id = _ordered_user_ids(user_a, user_b)
-    stmt = select(DirectMessageThread).where(
-        DirectMessageThread.workspace_id == workspace_id,
-        DirectMessageThread.user1_id == user1_id,
-        DirectMessageThread.user2_id == user2_id,
+
+    # Backward-compat: versões antigas podiam gravar (user1_id,user2_id) invertidos.
+    # Para evitar criar uma segunda thread por par de usuários, procuramos ambas as ordens.
+    # DMs são entre dois usuários; o workspace é um "scope" de UI.
+    # Para evitar que dois usuários em workspaces diferentes caiam em threads diferentes,
+    # reaproveite uma thread existente do par em qualquer workspace.
+    result = await db.execute(
+        select(DirectMessageThread).where(
+            or_(
+                and_(
+                    DirectMessageThread.user1_id == user1_id,
+                    DirectMessageThread.user2_id == user2_id,
+                ),
+                and_(
+                    DirectMessageThread.user1_id == user2_id,
+                    DirectMessageThread.user2_id == user1_id,
+                ),
+            )
+        )
     )
-    result = await db.execute(stmt)
-    thread = result.scalars().first()
-    if thread:
+    threads = result.scalars().all()
+    if threads:
+        def _sort_key(t: DirectMessageThread):
+            return (t.updated_at or t.created_at, t.id)
+
+        thread = sorted(threads, key=_sort_key, reverse=True)[0]
+        if (thread.user1_id, thread.user2_id) != (user1_id, user2_id):
+            thread.user1_id = user1_id
+            thread.user2_id = user2_id
+            await db.commit()
+            await db.refresh(thread)
         return thread
 
     thread = DirectMessageThread(
@@ -37,22 +63,75 @@ async def get_or_create_thread(
     return thread
 
 
-async def list_threads(db: AsyncSession, *, user_id: int, workspace_id: int | None = None):
-    stmt = select(DirectMessageThread).where(
+async def list_threads(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    workspace_id: int | None = None,
+    query: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    user1 = aliased(User)
+    user2 = aliased(User)
+
+    stmt = (
+        select(DirectMessageThread)
+        .join(user1, DirectMessageThread.user1_id == user1.id)
+        .join(user2, DirectMessageThread.user2_id == user2.id)
+        .where(
         or_(
             DirectMessageThread.user1_id == user_id,
             DirectMessageThread.user2_id == user_id,
         )
+        )
     )
-    if workspace_id is not None:
-        stmt = stmt.where(DirectMessageThread.workspace_id == workspace_id)
-    result = await db.execute(stmt.order_by(DirectMessageThread.updated_at.desc()))
-    return result.scalars().all()
+    # workspace_id é um filtro de UI; para manter DMs consistentes entre workspaces,
+    # listamos todas as threads do usuário.
+
+    if query:
+        q = f"%{query.strip()}%"
+        stmt = stmt.where(or_(user1.display_name.ilike(q), user2.display_name.ilike(q)))
+
+    # Pegamos um pouco mais para compensar dedupe em memória.
+    # (Sem isso, offset/limit poderiam reduzir demais o resultado final.)
+    fetch_limit = max(limit, 1) * 5
+
+    result = await db.execute(
+        stmt.options(
+            selectinload(DirectMessageThread.user1),
+            selectinload(DirectMessageThread.user2),
+        )
+        .order_by(DirectMessageThread.updated_at.desc())
+        .offset(offset)
+        .limit(fetch_limit)
+    )
+    rows = result.scalars().all()
+
+    # Dedupe por par (user1,user2) independente de ordem/workspace.
+    def _sort_key(t: DirectMessageThread):
+        return (t.updated_at or t.created_at, t.id)
+
+    by_pair: dict[tuple[int, int], DirectMessageThread] = {}
+    for t in rows:
+        a, b = _ordered_user_ids(int(t.user1_id), int(t.user2_id))
+        key = (a, b)
+        prev = by_pair.get(key)
+        if prev is None or _sort_key(t) > _sort_key(prev):
+            by_pair[key] = t
+
+    deduped = sorted(by_pair.values(), key=_sort_key, reverse=True)
+    return deduped[:limit]
 
 
 async def get_thread(db: AsyncSession, thread_id: int) -> DirectMessageThread | None:
     result = await db.execute(
-        select(DirectMessageThread).where(DirectMessageThread.id == thread_id)
+        select(DirectMessageThread)
+        .options(
+            selectinload(DirectMessageThread.user1),
+            selectinload(DirectMessageThread.user2),
+        )
+        .where(DirectMessageThread.id == thread_id)
     )
     return result.scalars().first()
 
@@ -64,6 +143,7 @@ def user_in_thread(thread: DirectMessageThread, user_id: int) -> bool:
 async def list_messages(db: AsyncSession, *, thread_id: int, limit: int = 50, offset: int = 0):
     stmt = (
         select(DirectMessage)
+        .options(selectinload(DirectMessage.sender))
         .where(DirectMessage.thread_id == thread_id)
         .order_by(DirectMessage.created_at.desc())
         .offset(offset)
@@ -80,4 +160,9 @@ async def create_direct_message(
     db.add(message)
     await db.commit()
     await db.refresh(message)
-    return message
+    q = await db.execute(
+        select(DirectMessage)
+        .options(selectinload(DirectMessage.sender))
+        .where(DirectMessage.id == message.id)
+    )
+    return q.scalars().first()

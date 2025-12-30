@@ -3,5 +3,40 @@
   "chat": "聊天",
   "profile": "个人资料",
   "settings": "设置",
-  "logout": "登出"
+  "logout": "登出",
+  "directMessagesPage": {
+    "title": "私信",
+    "tabs": {
+      "invite": "邀请",
+      "friends": "好友",
+      "recent": "最近"
+    },
+    "errors": {
+      "selectWorkspace": "请先选择一个工作区"
+    },
+    "invite": {
+      "findTitle": "查找用户",
+      "searchPlaceholder": "按 handle 搜索（例如 Braum#6892）",
+      "typeMore": "请输入至少 2 个字符进行搜索。",
+      "noUsers": "未找到用户。",
+      "invite": "邀请",
+      "sent": "已发送",
+      "accept": "接受",
+      "decline": "拒绝",
+      "incomingTitle": "收到的邀请",
+      "outgoingTitle": "已发送的邀请",
+      "nonePending": "没有待处理的邀请。",
+      "noneOutgoing": "没有已发送的邀请。"
+    },
+    "friends": {
+      "searchPlaceholder": "搜索好友",
+      "openDm": "打开私信",
+      "noFriends": "暂无好友。"
+    },
+    "recent": {
+      "searchPlaceholder": "搜索最近会话",
+      "open": "打开",
+      "noThreads": "暂无最近会话。"
+    }
+  }
 }

@@ -9,5 +9,60 @@
     "logout": "Sair",
     "presence": "Presença",
     "devices": "Dispositivos",
-    "selectWorkspace": "Selecione um workspace"
+    "selectWorkspace": "Selecione um workspace",
+    "workspacesPage": {
+        "title": "Workspaces",
+        "create": "Criar",
+        "active": "Ativo",
+        "select": "Selecionar",
+        "prompts": {
+            "name": "Nome do workspace",
+            "slug": "Slug (opcional)"
+        },
+        "empty": {
+            "title": "Crie um workspace e convide sua equipe",
+            "subtitle": "Organize conversas de trabalho ou comunidade em um só lugar. Crie um workspace e convide pessoas para colaborar com clareza.",
+            "createWorkspace": "Criar workspace",
+            "inviteLinkTitle": "Convide alguém para o {{appName}}",
+            "inviteLinkSubtitle": "Compartilhe este link com quem ainda não tem conta. Após se cadastrar, a pessoa pode te enviar um pedido de amizade automaticamente.",
+            "copyInviteLink": "Copiar link",
+            "copied": "Copiado"
+        }
+    },
+    "directMessagesPage": {
+        "title": "Mensagens Diretas",
+        "loadMore": "Carregar mais",
+        "tabs": {
+            "invite": "Convidar",
+            "friends": "Amigos",
+            "recent": "Recentes"
+        },
+        "errors": {
+            "selectWorkspace": "Selecione um workspace primeiro"
+        },
+        "invite": {
+            "findTitle": "Encontrar pessoas",
+            "searchPlaceholder": "Busque por handle (ex: Braum#6892)",
+            "typeMore": "Digite ao menos 2 caracteres para buscar.",
+            "noUsers": "Nenhum usuário encontrado.",
+            "invite": "Convidar",
+            "sent": "Enviado",
+            "accept": "Aceitar",
+            "decline": "Recusar",
+            "incomingTitle": "Convites recebidos",
+            "outgoingTitle": "Convites enviados",
+            "nonePending": "Nenhum convite pendente.",
+            "noneOutgoing": "Nenhum convite enviado."
+        },
+        "friends": {
+            "searchPlaceholder": "Buscar amigos",
+            "openDm": "Abrir DM",
+            "noFriends": "Nenhum amigo ainda."
+        },
+        "recent": {
+            "searchPlaceholder": "Buscar conversas recentes",
+            "open": "Abrir",
+            "noThreads": "Nenhuma conversa recente."
+        }
+    }
 }

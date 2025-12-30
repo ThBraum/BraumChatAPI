@@ -1,19 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { AppShellProvider, useAppShell } from "@/components/providers/app-shell-provider";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useNotificationsSocket } from "@/hooks/use-notifications-socket";
 import type { Workspace } from "@/lib/types";
 import { queryKeys } from "@/lib/query-keys";
 import { API_BASE_URL } from "@/lib/utils";
 
 const ShellViewport = ({ children }: { children: React.ReactNode }) => {
-    const { apiFetch } = useAuth();
+    const { apiFetch, accessToken } = useAuth();
+    const queryClient = useQueryClient();
     const { activeWorkspaceId, setActiveWorkspaceId } = useAppShell();
     const [backendHealthy, setBackendHealthy] = useState<boolean | null>(null);
 
@@ -49,6 +51,25 @@ const ShellViewport = ({ children }: { children: React.ReactNode }) => {
             setActiveWorkspaceId(workspaces[0].id);
         }
     }, [activeWorkspaceId, setActiveWorkspaceId, workspaces]);
+
+    useNotificationsSocket({
+        token: accessToken,
+        onMessage: (message) => {
+            if (!message || typeof message !== "object") return;
+            const type = (message as { type?: string }).type;
+            if (!type) return;
+            if (type.startsWith("invite.")) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.incomingInvites });
+                queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
+            }
+            if (type.startsWith("friend.")) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.friendRequestsIncoming });
+                queryClient.invalidateQueries({ queryKey: queryKeys.friendRequestsOutgoing });
+                // friends() inclui query; invalida pelo prefixo
+                queryClient.invalidateQueries({ queryKey: ["friends"] });
+            }
+        },
+    });
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
@@ -16,9 +16,15 @@ import { Button } from "@/components/ui/button";
 
 export default function RegisterPage() {
     const formRef = useRef<HTMLFormElement | null>(null);
-    const { register: registerUser } = useAuth();
+    const { register: registerUser, accessToken, isLoading } = useAuth();
     const router = useRouter();
     const { t } = useTranslation(["auth", "common"]);
+
+    useEffect(() => {
+        if (!isLoading && accessToken) {
+            router.replace("/app");
+        }
+    }, [accessToken, isLoading, router]);
 
     const [displayName, setDisplayName] = useState("");
     const [email, setEmail] = useState("");
@@ -74,17 +80,23 @@ export default function RegisterPage() {
             return;
         }
 
+        const normalizedDisplayName = displayName.trim();
+        if (normalizedDisplayName.length < 2 || normalizedDisplayName.length > 32 || normalizedDisplayName.includes("#")) {
+            setError(t("auth:register.invalidDisplayName") as string);
+            setIsSubmitting(false);
+            return;
+        }
+
         setError(null);
         try {
             await registerUser({
                 email,
                 password,
-                display_name: displayName,
+                display_name: normalizedDisplayName,
             });
             setSuccess(t("auth:register.success") ?? "Account created! Redirecting...");
             setConfirmPassword("");
-            // Após sucesso, vai direto para a tela principal
-            router.push("/");
+            router.push("/app");
         } catch (err) {
             setError((err as Error)?.message ?? t("auth:login.error") ?? "Register failed");
         } finally {

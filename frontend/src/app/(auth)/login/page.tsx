@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -17,9 +17,15 @@ import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
     const formRef = useRef<HTMLFormElement | null>(null);
-    const { login } = useAuth();
+    const { login, accessToken, isLoading } = useAuth();
     const router = useRouter();
     const { t } = useTranslation(["auth", "common"]);
+
+    useEffect(() => {
+        if (!isLoading && accessToken) {
+            router.replace("/app");
+        }
+    }, [accessToken, isLoading, router]);
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -82,7 +88,7 @@ export default function LoginPage() {
         }
         try {
             await login({ email, password });
-            router.replace("/");
+            router.replace("/app");
         } catch (err) {
             setError((err as Error)?.message ?? t("auth:login.error") ?? "Login failed");
         } finally {

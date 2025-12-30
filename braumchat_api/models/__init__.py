@@ -2,12 +2,15 @@ from .channel import Channel  # noqa
 from .channel_member import ChannelMember  # noqa
 from .direct_message import DirectMessage  # noqa
 from .direct_message_thread import DirectMessageThread  # noqa
+from .friend import Friend  # noqa
+from .friend_request import FriendRequest  # noqa
 from .message import Message  # noqa
 from .meta import Base, BaseEntity  # noqa
 from .user import User  # noqa
 from .user_session import UserSession  # noqa
 from .workspace import Workspace  # noqa
 from .workspace_member import WorkspaceMember  # noqa
+from .workspace_invite import WorkspaceInvite  # noqa
 
 __all__ = [
     "Base",
@@ -20,5 +23,8 @@ __all__ = [
     "Message",
     "DirectMessageThread",
     "DirectMessage",
+    "Friend",
+    "FriendRequest",
     "UserSession",
+    "WorkspaceInvite",
 ]

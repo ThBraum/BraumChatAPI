@@ -130,7 +130,7 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
 
     const threadsQuery = useQuery<Thread[]>({
         queryKey: queryKeys.threads,
-        queryFn: () => apiFetch(`/dm/threads`),
+        queryFn: () => apiFetch(`/dm/threads?workspace_id=${encodeURIComponent(activeWorkspaceId ?? "")}`),
         enabled: !!activeWorkspaceId,
     });
 
@@ -148,9 +148,10 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
 
     const createThreadMutation = useMutation({
         mutationFn: async (participant: string) => {
+            if (!activeWorkspaceId) throw new Error("Missing active workspace");
             return apiFetch(`/dm/threads`, {
                 method: "POST",
-                body: JSON.stringify({ participant_email: participant }),
+                body: JSON.stringify({ workspace_id: Number(activeWorkspaceId), participant_email: participant }),
             });
         },
         onSuccess: () => {

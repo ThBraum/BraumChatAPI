@@ -28,7 +28,7 @@ export interface Channel {
 export interface Thread {
 	id: string;
 	workspace_id: string;
-	participants: User[];
+	participants: Array<Pick<User, "id" | "display_name" | "avatar_url">>;
 	last_message?: Message;
 }
 
@@ -56,6 +56,27 @@ export interface Session {
 	is_current: boolean;
 }
 
+export interface WorkspaceInvite {
+	id: string;
+	workspace_id: string;
+	workspace_name: string;
+	status: "pending" | "accepted" | "declined";
+	inviter: Pick<User, "id" | "display_name" | "avatar_url">;
+	invitee: Pick<User, "id" | "display_name" | "avatar_url">;
+	created_at?: string | null;
+}
+
+export interface FriendRequest {
+	id: string;
+	status: "pending" | "accepted" | "declined";
+	requester: Pick<User, "id" | "display_name" | "avatar_url">;
+	addressee: Pick<User, "id" | "display_name" | "avatar_url">;
+	created_at?: string | null;
+	updated_at?: string | null;
+}
+
 export type MessagePayload =
 	| { type: "message"; payload: Message }
 	| { type: "typing"; payload: { user_id: string; is_typing: boolean } };
+
+export type WsOutgoingPayload = { type: "typing"; is_typing: boolean };

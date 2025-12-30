@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
@@ -13,6 +14,7 @@ import { queryKeys } from "@/lib/query-keys";
 import { API_BASE_URL } from "@/lib/utils";
 
 const ShellViewport = ({ children }: { children: React.ReactNode }) => {
+    const { t } = useTranslation(["common"]);
     const { apiFetch } = useAuth();
     const { activeWorkspaceId, setActiveWorkspaceId } = useAppShell();
     const [backendHealthy, setBackendHealthy] = useState<boolean | null>(null);
@@ -54,7 +56,7 @@ const ShellViewport = ({ children }: { children: React.ReactNode }) => {
         <div className="flex min-h-screen flex-col bg-background text-foreground">
             {backendHealthy === false && (
                 <div className="bg-red-600 text-white px-4 py-2 text-sm text-center">
-                    Backend indisponível em {API_BASE_URL} — algumas funcionalidades podem falhar.
+                    {t("common:backendUnavailable", { url: API_BASE_URL })}
                 </div>
             )}
             <TopNav workspaces={workspaces} isLoadingWorkspaces={isLoading} />

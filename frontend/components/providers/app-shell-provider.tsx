@@ -4,7 +4,8 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 
 interface AppShellContextValue {
     activeWorkspaceId: string | null;
-    setActiveWorkspaceId: (id: string) => void;
+    // Accept string or number (normalize to string internally)
+    setActiveWorkspaceId: (id: string | number | null) => void;
     activeChannelId: string | null;
     setActiveChannelId: (id: string | null) => void;
     activeThreadId: string | null;
@@ -18,8 +19,10 @@ export const AppShellProvider = ({ children }: { children: React.ReactNode }) =>
     const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
     const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
 
-    const handleWorkspaceChange = useCallback((id: string | null) => {
-        setActiveWorkspace(id);
+    const handleWorkspaceChange = useCallback((id: string | number | null) => {
+        // normalize ID to string or null to avoid type mismatches
+        const normalized = id === null || id === undefined ? null : String(id);
+        setActiveWorkspace(normalized);
         setActiveChannelId(null);
         setActiveThreadId(null);
     }, []);
@@ -27,7 +30,7 @@ export const AppShellProvider = ({ children }: { children: React.ReactNode }) =>
     const value = useMemo(
         () => ({
             activeWorkspaceId: activeWorkspace,
-            setActiveWorkspaceId: (id: string) => handleWorkspaceChange(id),
+            setActiveWorkspaceId: (id: string | number | null) => handleWorkspaceChange(id),
             activeChannelId,
             setActiveChannelId,
             activeThreadId,

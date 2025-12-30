@@ -9,5 +9,40 @@
     "logout": "Se déconnecter",
     "presence": "Présence",
     "devices": "Appareils",
-    "selectWorkspace": "Sélectionnez un workspace"
+    "selectWorkspace": "Sélectionnez un workspace",
+    "directMessagesPage": {
+        "title": "Messages directs",
+        "tabs": {
+            "invite": "Inviter",
+            "friends": "Amis",
+            "recent": "Récents"
+        },
+        "errors": {
+            "selectWorkspace": "Sélectionnez d'abord un workspace"
+        },
+        "invite": {
+            "findTitle": "Trouver des personnes",
+            "searchPlaceholder": "Rechercher par handle (ex. Braum#6892)",
+            "typeMore": "Tapez au moins 2 caractères pour rechercher.",
+            "noUsers": "Aucun utilisateur trouvé.",
+            "invite": "Inviter",
+            "sent": "Envoyé",
+            "accept": "Accepter",
+            "decline": "Refuser",
+            "incomingTitle": "Invitations reçues",
+            "outgoingTitle": "Invitations envoyées",
+            "nonePending": "Aucune invitation en attente.",
+            "noneOutgoing": "Aucune invitation envoyée."
+        },
+        "friends": {
+            "searchPlaceholder": "Rechercher des amis",
+            "openDm": "Ouvrir un DM",
+            "noFriends": "Pas encore d'amis."
+        },
+        "recent": {
+            "searchPlaceholder": "Rechercher des conversations récentes",
+            "open": "Ouvrir",
+            "noThreads": "Aucune conversation récente."
+        }
+    }
 }

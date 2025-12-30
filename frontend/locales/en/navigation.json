@@ -9,5 +9,60 @@
     "logout": "Logout",
     "presence": "Presence",
     "devices": "Devices",
-    "selectWorkspace": "Select a workspace"
+    "selectWorkspace": "Select a workspace",
+    "workspacesPage": {
+        "title": "Workspaces",
+        "create": "Create",
+        "active": "Active",
+        "select": "Select",
+        "prompts": {
+            "name": "Workspace name",
+            "slug": "Slug (optional)"
+        },
+        "empty": {
+            "title": "Create a workspace and invite your people",
+            "subtitle": "Set up a space for your team or community, then invite people to collaborate and keep conversations organized.",
+            "createWorkspace": "Create workspace",
+            "inviteLinkTitle": "Invite someone to {{appName}}",
+            "inviteLinkSubtitle": "Share this link with someone new. After signup, they can send you a friend request automatically.",
+            "copyInviteLink": "Copy link",
+            "copied": "Copied"
+        }
+    },
+    "directMessagesPage": {
+        "title": "Direct Messages",
+        "loadMore": "Load more",
+        "tabs": {
+            "invite": "Invite",
+            "friends": "Friends",
+            "recent": "Recent"
+        },
+        "errors": {
+            "selectWorkspace": "Select a workspace first"
+        },
+        "invite": {
+            "findTitle": "Find people",
+            "searchPlaceholder": "Search by handle (e.g. Braum#6892)",
+            "typeMore": "Type at least 2 characters to search.",
+            "noUsers": "No users found.",
+            "invite": "Invite",
+            "sent": "Sent",
+            "accept": "Accept",
+            "decline": "Decline",
+            "incomingTitle": "Incoming invites",
+            "outgoingTitle": "Outgoing invites",
+            "nonePending": "No pending invites.",
+            "noneOutgoing": "No outgoing invites."
+        },
+        "friends": {
+            "searchPlaceholder": "Search friends",
+            "openDm": "Open DM",
+            "noFriends": "No friends yet."
+        },
+        "recent": {
+            "searchPlaceholder": "Search recent conversations",
+            "open": "Open",
+            "noThreads": "No recent conversations."
+        }
+    }
 }
