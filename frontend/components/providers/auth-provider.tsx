@@ -20,12 +20,24 @@ interface AuthContextValue {
     accessToken: string | null;
     refreshToken: string | null;
     isLoading: boolean;
-    login: (payload: { email: string; password: string }) => Promise<void>;
-    register: (payload: {
+    login: (
+        payload: { email: string; password: string },
+        options?: {
+            redirectTo?: string;
+            friendInviteDisplayName?: string;
+        },
+    ) => Promise<void>;
+    register: (
+        payload: {
         email: string;
         password: string;
         display_name: string;
-    }) => Promise<void>;
+        },
+        options?: {
+            redirectTo?: string;
+            friendInviteDisplayName?: string;
+        },
+    ) => Promise<void>;
     logout: () => Promise<void>;
     apiFetch: <T>(path: string, options?: ApiRequestOptions) => Promise<T>;
 }
@@ -97,12 +109,22 @@ export const AuthProvider = ({
                     },
                     cache: "no-store",
                 });
-                if (!response.ok) throw new Error("Unable to fetch profile");
+                if (response.status === 401) {
+                    setUser(null);
+                    setTokens(null);
+                    return;
+                }
+
+                if (!response.ok) {
+                    setUser(null);
+                    return;
+                }
+
                 const profile = await response.json();
                 setUser(profile);
-            } catch {
+            } catch (err) {
+                console.error("Unable to fetch profile", err);
                 setUser(null);
-                setTokens(null);
             } finally {
                 setIsLoading(false);
             }
@@ -184,7 +206,10 @@ export const AuthProvider = ({
     );
 
     const login = useCallback(
-        async (payload: { email: string; password: string }) => {
+        async (
+            payload: { email: string; password: string },
+            options?: { redirectTo?: string; friendInviteDisplayName?: string },
+        ) => {
             const form = new URLSearchParams();
             // FastAPI OAuth2PasswordRequestForm expects form fields: username/password (+ optional OAuth2 fields)
             form.set("grant_type", "password");
@@ -206,22 +231,44 @@ export const AuthProvider = ({
             const tokens = (await response.json()) as AuthTokens;
             setTokens(tokens);
             await fetchProfile(tokens.access_token);
-            router.push("/");
+
+            if (options?.friendInviteDisplayName) {
+                try {
+                    await fetch(buildUrl("/friends/requests"), {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${tokens.access_token}`,
+                        },
+                        body: JSON.stringify({
+                            addressee_display_name: options.friendInviteDisplayName,
+                        }),
+                    });
+                } catch (err) {
+                    console.warn("Unable to send friend invite after signup/login", err);
+                }
+            }
+
+            router.push(options?.redirectTo ?? "/app");
         },
         [fetchProfile, router, setTokens],
     );
 
     const register = useCallback(
-        async (payload: { email: string; password: string; display_name: string }) => {
+        async (
+            payload: { email: string; password: string; display_name: string },
+            options?: { redirectTo?: string; friendInviteDisplayName?: string },
+        ) => {
             const response = await fetch(buildUrl("/auth/register"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
             if (!response.ok) {
-                throw new Error("Unable to register");
+                const message = await response.text();
+                throw new Error(message || "Unable to register");
             }
-            await login({ email: payload.email, password: payload.password });
+            await login({ email: payload.email, password: payload.password }, options);
         },
         [login],
     );

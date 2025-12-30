@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare, Plus, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import type { Channel, Thread, Workspace } from "@/lib/types";
+import type { Channel, Thread, Workspace, WorkspaceInvite } from "@/lib/types";
 import { queryKeys } from "@/lib/query-keys";
 
 interface SidebarProps {
@@ -21,23 +22,29 @@ interface SidebarProps {
 const SidebarContent = ({
     channels,
     threads,
+    invites,
     onSelectChannel,
     onSelectThread,
     activeChannelId,
     activeThreadId,
     onCreateChannel,
     onCreateThread,
+    onAcceptInvite,
+    onDeclineInvite,
 }: {
     channels: Channel[];
     threads: Thread[];
+    invites: WorkspaceInvite[];
     onSelectChannel: (id: string) => void;
     onSelectThread: (id: string) => void;
     activeChannelId: string | null;
     activeThreadId: string | null;
     onCreateChannel: () => void;
     onCreateThread: () => void;
+    onAcceptInvite: (id: string) => void;
+    onDeclineInvite: (id: string) => void;
 }) => {
-    const { t } = useTranslation(["navigation"]);
+    const { t } = useTranslation(["navigation", "common"]);
 
     return (
         <div className="flex h-full flex-col">
@@ -103,6 +110,45 @@ const SidebarContent = ({
                             </li>
                         )}
                     </ul>
+
+                    <div className="mt-8 mb-4 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <span>{t("navigation:invites")}{invites.length ? ` (${invites.length})` : ""}</span>
+                    </div>
+                    <ul className="space-y-2">
+                        {invites.map((invite) => (
+                            <li key={invite.id} className="rounded-md border bg-background/50 px-3 py-2">
+                                <div className="text-sm text-foreground truncate">
+                                    {invite.workspace_name}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                    {t("common:labels.from")} {invite.inviter.display_name ?? invite.inviter.id}
+                                </div>
+                                <div className="mt-2 flex gap-2">
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        onClick={() => onAcceptInvite(invite.id)}
+                                    >
+                                        {t("common:invites.accept")}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        onClick={() => onDeclineInvite(invite.id)}
+                                    >
+                                        {t("common:invites.decline")}
+                                    </Button>
+                                </div>
+                            </li>
+                        ))}
+                        {invites.length === 0 && (
+                            <li className="px-3 py-2 text-xs text-muted-foreground">
+                                {t("common:invites.none")}
+                            </li>
+                        )}
+                    </ul>
                 </div>
             </ScrollArea>
         </div>
@@ -110,7 +156,8 @@ const SidebarContent = ({
 };
 
 export const Sidebar = ({ workspaces }: SidebarProps) => {
-    const { apiFetch } = useAuth();
+    const router = useRouter();
+    const { apiFetch, user } = useAuth();
     const queryClient = useQueryClient();
     const {
         activeWorkspaceId,
@@ -129,9 +176,15 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
     });
 
     const threadsQuery = useQuery<Thread[]>({
-        queryKey: queryKeys.threads,
-        queryFn: () => apiFetch(`/dm/threads`),
+            queryKey: queryKeys.threadsList(activeWorkspaceId ?? undefined),
+        queryFn: () => apiFetch(`/dm/threads?workspace_id=${activeWorkspaceId}`),
         enabled: !!activeWorkspaceId,
+    });
+
+    const invitesQuery = useQuery<WorkspaceInvite[]>({
+        queryKey: queryKeys.incomingInvites,
+        queryFn: () => apiFetch(`/invites/incoming`),
+        enabled: !!user,
     });
 
     const createChannelMutation = useMutation({
@@ -146,20 +199,48 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
         },
     });
 
-    const createThreadMutation = useMutation({
-        mutationFn: async (participant: string) => {
-            return apiFetch(`/dm/threads`, {
+    const inviteUserMutation = useMutation({
+        mutationFn: async (displayName: string) => {
+            if (!activeWorkspaceId) throw new Error("No workspace selected");
+            return apiFetch(`/workspaces/${activeWorkspaceId}/invites`, {
                 method: "POST",
-                body: JSON.stringify({ participant_email: participant }),
+                body: JSON.stringify({ invitee_display_name: displayName }),
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.threads });
+            queryClient.invalidateQueries({ queryKey: queryKeys.incomingInvites });
+            queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
+            // feedback simples
+            window.alert(t("common:invites.sent"));
+        },
+        onError: (err: unknown) => {
+            const msg = (err as Error)?.message ?? String(err);
+            window.alert(t("common:invites.error", { message: msg }));
+        },
+    });
+
+    const acceptInviteMutation = useMutation({
+        mutationFn: async (inviteId: string) => {
+            return apiFetch(`/invites/${inviteId}/accept`, { method: "POST" });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.incomingInvites });
+            queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
+        },
+    });
+
+    const declineInviteMutation = useMutation({
+        mutationFn: async (inviteId: string) => {
+            return apiFetch(`/invites/${inviteId}/decline`, { method: "POST" });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.incomingInvites });
         },
     });
 
     const channels = channelsQuery.data ?? [];
     const threads = threadsQuery.data ?? [];
+    const invites = invitesQuery.data ?? [];
 
     const handleCreateChannel = () => {
         if (!activeWorkspaceId) return;
@@ -170,9 +251,17 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
     };
 
     const handleCreateThread = () => {
-        const email = prompt(t("navigation:createThread") ?? "New DM");
-        if (email) {
-            createThreadMutation.mutate(email);
+        router.push("/app/direct-messages?tab=invite");
+    };
+
+    const handleInviteUser = () => {
+        if (!activeWorkspaceId) {
+            window.alert(t("common:contacts.selectWorkspaceFirst"));
+            return;
+        }
+        const displayName = prompt(t("common:invites.prompt"));
+        if (displayName) {
+            inviteUserMutation.mutate(displayName.trim());
         }
     };
 
@@ -180,6 +269,7 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
         <SidebarContent
             channels={channels}
             threads={threads}
+            invites={invites}
             onSelectChannel={(id) => {
                 setActiveThreadId(null);
                 setActiveChannelId(id);
@@ -194,6 +284,8 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
             activeThreadId={activeThreadId}
             onCreateChannel={handleCreateChannel}
             onCreateThread={handleCreateThread}
+            onAcceptInvite={(id) => acceptInviteMutation.mutate(id)}
+            onDeclineInvite={(id) => declineInviteMutation.mutate(id)}
         />
     );
 
@@ -204,8 +296,18 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
     return (
         <>
             <aside className="hidden w-64 flex-col border-r bg-card md:flex">
-                <div className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {workspaceLabel}
+                <div className="flex items-center justify-between px-4 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span className="truncate">{workspaceLabel}</span>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={handleInviteUser}
+                        disabled={!activeWorkspaceId}
+                        title={t("common:invites.title")}
+                    >
+                        <Users className="h-4 w-4" />
+                    </Button>
                 </div>
                 {content}
             </aside>
@@ -218,7 +320,19 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="left" className="w-72 p-0">
-                        <div className="border-b px-4 py-3 text-sm font-semibold">{workspaceLabel}</div>
+                        <div className="flex items-center justify-between border-b px-4 py-3 text-sm font-semibold">
+                            <span className="truncate">{workspaceLabel}</span>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={handleInviteUser}
+                                disabled={!activeWorkspaceId}
+                                title={t("common:invites.title")}
+                            >
+                                <Users className="h-4 w-4" />
+                            </Button>
+                        </div>
                         {content}
                     </SheetContent>
                 </Sheet>

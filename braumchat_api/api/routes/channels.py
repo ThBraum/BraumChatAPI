@@ -8,6 +8,7 @@ from ...db.redis import redis as redis_client
 from ...schemas.channel import ChannelCreate, ChannelRead
 from ...services import presence_service
 from ...services.channel_service import create_channel, get_channel, list_channels
+from ...services.user_service import list_users_by_ids
 
 router = APIRouter()
 
@@ -50,11 +51,12 @@ async def get_channel_presence(
     if not channel:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    online_users = await presence_service.list_users(
+    online_user_ids = await presence_service.list_users(
         redis_client, channel.workspace_id, channel.id
     )
-    return {
-        "workspace_id": channel.workspace_id,
-        "channel_id": channel.id,
-        "online_user_ids": online_users,
-    }
+
+    users = await list_users_by_ids(db, online_user_ids)
+    return [
+        {"user_id": u.id, "display_name": u.display_name}
+        for u in users
+    ]

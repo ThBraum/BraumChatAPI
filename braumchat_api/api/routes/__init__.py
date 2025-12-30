@@ -1,3 +1,11 @@
-from . import auth, channels, direct_messages, messages, realtime, workspaces
+from . import auth, channels, direct_messages, messages, realtime, users, workspaces
 
-__all__ = ["auth", "realtime", "workspaces", "channels", "messages", "direct_messages"]
+__all__ = [
+	"auth",
+	"realtime",
+	"workspaces",
+	"channels",
+	"messages",
+	"direct_messages",
+	"users",
+]

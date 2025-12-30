@@ -1,0 +1,69 @@
+{
+    "appName": "ChattingWork",
+    "backendUnavailable": "Backend unavailable at {{url}} — some features may fail.",
+    "loading": "Loading...",
+    "search": "Search",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "save": "Save",
+    "cancel": "Cancel",
+    "soon": "coming soon",
+    "status": {
+        "online": "Online",
+        "offline": "Offline",
+        "typing": "typing..."
+    },
+    "labels": {
+        "id": "id"
+    ,
+    "from": "from"
+    },
+    "tabs": {
+        "workspaces": "Workspaces",
+        "contacts": "Contacts",
+        "directMessages": "Direct messages"
+    },
+    "workspaces": {
+        "title": "Workspaces",
+        "create": "Create",
+        "namePrompt": "Workspace name",
+        "slugPrompt": "Slug (optional)",
+        "active": "Active",
+        "select": "Select",
+        "empty": "No workspaces yet."
+    },
+    "contacts": {
+        "title": "Contacts",
+        "searchPlaceholder": "Search by display name (min. 2)",
+        "searching": "Searching...",
+        "invite": "Invite",
+        "openDm": "Open DM",
+        "selectWorkspaceFirst": "Select a workspace first",
+        "inviteTitle": "Invite to the active workspace",
+        "openDmTitle": "Open a DM",
+        "noUsersFound": "No users found.",
+        "minChars": "Type at least 2 characters."
+    },
+    "invites": {
+        "accept": "Accept",
+        "decline": "Decline",
+        "none": "No pending invites.",
+        "sent": "Invite sent.",
+        "error": "Failed to send invite: {{message}}",
+        "prompt": "Display name to invite",
+        "title": "Invite by display name"
+    },
+    "directMessages": {
+        "title": "Direct messages",
+        "empty": "No direct messages yet.",
+        "open": "Open"
+    },
+    "protected": {
+        "loading": "Loading..."
+    },
+    "placeholders": {
+        "search": "Search by name or channel"
+    }
+}

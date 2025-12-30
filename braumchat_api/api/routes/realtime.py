@@ -10,6 +10,44 @@ from ...services.message_service import create_message
 router = APIRouter()
 
 
+@router.websocket("/ws/notifications")
+async def ws_notifications(
+    websocket: WebSocket,
+    db: AsyncSession = Depends(get_db_dep),
+):
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=1008)
+        return
+
+    try:
+        from ...security.security import decode_token
+        from ...services.user_service import get_user
+
+        payload = decode_token(token)
+        user_id = int(payload.get("sub"))
+        user = await get_user(db, user_id)
+        if not user:
+            raise ValueError()
+    except Exception:
+        await websocket.close(code=1008)
+        return
+
+    channel_key = f"notify:{user.id}"
+    await manager.connect(channel_key, websocket, user_id=user.id)
+
+    try:
+        while True:
+            # Keep connection open; client may send pings or nothing.
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        await manager.disconnect(channel_key, websocket)
+
+
 @router.websocket("/ws/chat/{workspace_id}/{channel_id}")
 async def ws_channel(
     websocket: WebSocket,
@@ -55,10 +93,17 @@ async def ws_channel(
                     db, channel_id=channel_id, user_id=user.id, content=content
                 )
 
+                author = {
+                    "id": user.id,
+                    "display_name": user.display_name,
+                    "avatar_url": user.avatar_url,
+                }
+
                 payload = {
                     "id": msg.id,
                     "content": msg.content,
                     "user_id": msg.user_id,
+                    "author": author,
                     "workspace_id": workspace_id,
                     "channel_id": channel_id,
                     "created_at": msg.created_at.isoformat() if msg.created_at else None,
@@ -137,11 +182,19 @@ async def ws_direct_message(
                     content=content,
                 )
 
+                author = {
+                    "id": user.id,
+                    "display_name": user.display_name,
+                    "avatar_url": user.avatar_url,
+                }
+
                 payload = {
                     "id": message.id,
                     "thread_id": message.thread_id,
                     "sender_id": message.sender_id,
+                    "user_id": message.sender_id,
                     "content": message.content,
+                    "author": author,
                     "created_at": message.created_at.isoformat() if message.created_at else None,
                     "is_deleted": message.is_deleted,
                     "is_edited": message.is_edited,

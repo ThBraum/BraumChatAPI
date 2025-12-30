@@ -3,5 +3,40 @@
   "chat": "Chat",
   "profile": "Profil",
   "settings": "Einstellungen",
-  "logout": "Abmelden"
+  "logout": "Abmelden",
+  "directMessagesPage": {
+    "title": "Direktnachrichten",
+    "tabs": {
+      "invite": "Einladen",
+      "friends": "Freunde",
+      "recent": "Zuletzt"
+    },
+    "errors": {
+      "selectWorkspace": "Wähle zuerst einen Workspace"
+    },
+    "invite": {
+      "findTitle": "Personen finden",
+      "searchPlaceholder": "Nach Handle suchen (z. B. Braum#6892)",
+      "typeMore": "Gib mindestens 2 Zeichen ein, um zu suchen.",
+      "noUsers": "Keine Nutzer gefunden.",
+      "invite": "Einladen",
+      "sent": "Gesendet",
+      "accept": "Annehmen",
+      "decline": "Ablehnen",
+      "incomingTitle": "Eingehende Einladungen",
+      "outgoingTitle": "Ausgehende Einladungen",
+      "nonePending": "Keine offenen Einladungen.",
+      "noneOutgoing": "Keine ausgehenden Einladungen."
+    },
+    "friends": {
+      "searchPlaceholder": "Freunde suchen",
+      "openDm": "DM öffnen",
+      "noFriends": "Noch keine Freunde."
+    },
+    "recent": {
+      "searchPlaceholder": "Letzte Unterhaltungen suchen",
+      "open": "Öffnen",
+      "noThreads": "Keine letzten Unterhaltungen."
+    }
+  }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -22,9 +22,12 @@ interface ChatViewProps {
 }
 
 export const ChatView = ({ workspaceId, channelId, threadId }: ChatViewProps) => {
-    const { apiFetch, accessToken } = useAuth();
+    const { apiFetch, accessToken, user } = useAuth();
     const queryClient = useQueryClient();
     const { t } = useTranslation(["chat"]);
+    const currentUserId = user?.id ?? null;
+    const [typingUserIds, setTypingUserIds] = useState<string[]>([]);
+    const typingTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
     const channelQuery = useQuery<Channel>({
         queryKey: ["channel", channelId],
@@ -54,7 +57,42 @@ export const ChatView = ({ workspaceId, channelId, threadId }: ChatViewProps) =>
         refetchInterval: 1000 * 30,
     });
 
-    useChannelSocket({
+    const resolveDisplayName = useCallback(
+        (userId: string) => {
+            const fromPresence = (presenceQuery.data ?? []).find((u) => u.user_id === userId)?.display_name;
+            if (fromPresence) return fromPresence;
+            const fromMessages = (messagesQuery.data ?? []).find((m) => m.user_id === userId)?.author?.display_name;
+            if (fromMessages) return fromMessages;
+            return `Usuário ${userId}`;
+        },
+        [messagesQuery.data, presenceQuery.data],
+    );
+
+    const handleIncomingTyping = useCallback(
+        (userId: string, isTyping: boolean) => {
+            // ignore self-typing if echoed
+            if (currentUserId && userId === currentUserId) return;
+
+            const existingTimer = typingTimersRef.current.get(userId);
+            if (existingTimer) clearTimeout(existingTimer);
+
+            if (!isTyping) {
+                typingTimersRef.current.delete(userId);
+                setTypingUserIds((prev) => prev.filter((id) => id !== userId));
+                return;
+            }
+
+            setTypingUserIds((prev) => (prev.includes(userId) ? prev : [...prev, userId]));
+            const timer = setTimeout(() => {
+                typingTimersRef.current.delete(userId);
+                setTypingUserIds((prev) => prev.filter((id) => id !== userId));
+            }, 2500);
+            typingTimersRef.current.set(userId, timer);
+        },
+        [currentUserId],
+    );
+
+    const channelSocket = useChannelSocket({
         workspaceId,
         channelId,
         token: accessToken,
@@ -69,10 +107,13 @@ export const ChatView = ({ workspaceId, channelId, threadId }: ChatViewProps) =>
                     return [...list, payload.payload];
                 });
             }
+            if (payload.type === "typing") {
+                handleIncomingTyping(payload.payload.user_id, payload.payload.is_typing);
+            }
         },
     });
 
-    useDmSocket({
+    const dmSocket = useDmSocket({
         threadId,
         token: accessToken,
         onMessage: (payload) => {
@@ -86,8 +127,22 @@ export const ChatView = ({ workspaceId, channelId, threadId }: ChatViewProps) =>
                     return [...list, payload.payload];
                 });
             }
+            if (payload.type === "typing") {
+                handleIncomingTyping(payload.payload.user_id, payload.payload.is_typing);
+            }
         },
     });
+
+    const sendTyping = useCallback(
+        (isTyping: boolean) => {
+            if (channelId) {
+                channelSocket.send({ type: "typing", is_typing: isTyping });
+            } else if (threadId) {
+                dmSocket.send({ type: "typing", is_typing: isTyping });
+            }
+        },
+        [channelId, channelSocket, dmSocket, threadId],
+    );
 
     const sendMessage = useMutation({
         mutationFn: async (values: MessageValues) => {
@@ -147,6 +202,11 @@ export const ChatView = ({ workspaceId, channelId, threadId }: ChatViewProps) =>
                     <p className="text-sm text-muted-foreground">
                         {channelQuery.data?.topic ?? "Messages are synced in realtime"}
                     </p>
+                    {typingUserIds.length > 0 && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {typingUserIds.map(resolveDisplayName).join(", ")} {typingUserIds.length === 1 ? "está digitando…" : "estão digitando…"}
+                        </p>
+                    )}
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     <MessageList messages={messagesQuery.data ?? []} />
@@ -155,6 +215,7 @@ export const ChatView = ({ workspaceId, channelId, threadId }: ChatViewProps) =>
                     placeholder={t("chat:composer.placeholder", { name: title })}
                     onSend={(values) => sendMessage.mutateAsync(values)}
                     isSending={sendMessage.isPending}
+                    onTyping={sendTyping}
                 />
             </div>
             {channelId && <PresencePanel users={presenceQuery.data ?? []} />}

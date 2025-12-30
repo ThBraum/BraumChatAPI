@@ -14,12 +14,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useSnackbar } from "@/components/providers/snackbar-provider";
+
+const extractApiDetail = (raw: string): string | null => {
+    const trimmed = raw?.trim();
+    if (!trimmed) return null;
+    try {
+        const parsed = JSON.parse(trimmed) as { detail?: unknown };
+        if (typeof parsed?.detail === "string" && parsed.detail.trim()) return parsed.detail.trim();
+    } catch {
+        // ignore
+    }
+    return null;
+};
 
 export default function LoginPage() {
     const formRef = useRef<HTMLFormElement | null>(null);
     const { login } = useAuth();
     const router = useRouter();
     const { t } = useTranslation(["auth", "common"]);
+    const { showSnackbar } = useSnackbar();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -53,19 +67,19 @@ export default function LoginPage() {
         if (!email?.trim() || !password) {
             setIsSubmitting(false);
             if (!email?.trim() && !password) {
-                setError(t("auth:login.requiredFields") ?? "Email and password are required");
-                setEmailError(t("auth:login.emailRequired") ?? "Email required");
-                setPasswordError(t("auth:login.passwordRequired") ?? "Password required");
+                setError(t("auth:login.requiredFields"));
+                setEmailError(t("auth:login.emailRequired"));
+                setPasswordError(t("auth:login.passwordRequired"));
                 return;
             }
             if (!email?.trim()) {
-                const message = t("auth:login.emailRequired") ?? "Email required";
+                const message = t("auth:login.emailRequired");
                 setEmailError(message);
                 setError(message);
                 return;
             }
             if (!password) {
-                const message = t("auth:login.passwordRequired") ?? "Password required";
+                const message = t("auth:login.passwordRequired");
                 setPasswordError(message);
                 setError(message);
                 return;
@@ -76,16 +90,35 @@ export default function LoginPage() {
         if (!parsed.success) {
             setIsSubmitting(false);
             const issues = parsed.error.formErrors.fieldErrors;
-            if (issues.email && issues.email.length) setEmailError(t("auth:login.invalidEmail") ?? issues.email[0]);
-            if (issues.password && issues.password.length) setPasswordError(t("auth:login.passwordMin") ?? issues.password[0]);
-            setError(t("auth:login.fixFields") ?? "Please fix the highlighted fields and try again");
+            if (issues.email && issues.email.length) setEmailError(t("auth:login.invalidEmail"));
+            if (issues.password && issues.password.length) setPasswordError(t("auth:login.passwordMin"));
+            setError(t("auth:login.fixFields"));
             return;
         }
         try {
             await login({ email, password });
-            router.replace("/");
+
+            showSnackbar({
+                variant: "success",
+                title: t("auth:snackbar.successTitle"),
+                message: t("auth:snackbar.loginSuccess"),
+            });
+            router.replace("/app");
         } catch (err) {
-            setError((err as Error)?.message ?? t("auth:login.error") ?? "Login failed");
+            const raw = (err as Error)?.message ?? "";
+            const detail = extractApiDetail(raw);
+            const isInvalidCreds =
+                /incorrect\s+credentials/i.test(raw) ||
+                /invalid\s+credentials/i.test(raw) ||
+                /incorrect\s+credentials/i.test(detail ?? "");
+
+            showSnackbar({
+                variant: "error",
+                title: t("auth:snackbar.errorTitle"),
+                message: isInvalidCreds
+                    ? t("auth:snackbar.invalidCredentials")
+                    : t("auth:snackbar.genericError"),
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -189,7 +222,7 @@ export default function LoginPage() {
                                 <p className="text-sm text-muted-foreground">{t("auth:login.subtitle")}</p>
                             </CardHeader>
                             <CardContent>
-                                <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+                                <form ref={formRef} onSubmit={handleSubmit} className="space-y-5" noValidate>
                                     {error && <p className="text-sm text-destructive">{error}</p>}
                                     <div className="space-y-2">
                                         <Label htmlFor="email" className="inline-flex items-center gap-1">
@@ -202,7 +235,6 @@ export default function LoginPage() {
                                             autoComplete="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            required
                                         />
                                         {emailError && <p className="text-sm text-destructive">{emailError}</p>}
                                     </div>
@@ -218,14 +250,13 @@ export default function LoginPage() {
                                                 autoComplete="current-password"
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
-                                                required
                                                 className="pr-10"
                                             />
                                             <button
                                                 type="button"
                                                 className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground"
                                                 onClick={() => setShowPassword((prev) => !prev)}
-                                                aria-label={showPassword ? t("auth:register.hidePassword") ?? "Hide password" : t("auth:register.showPassword") ?? "Show password"}
+                                                aria-label={showPassword ? t("auth:register.hidePassword") : t("auth:register.showPassword")}
                                             >
                                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                             </button>

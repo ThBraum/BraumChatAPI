@@ -1,19 +1,29 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field, root_validator
+
+from .user import UserPublic
 
 
 class DirectMessageThreadCreate(BaseModel):
     workspace_id: int
-    user_id: int  # other participant
+    user_id: int | None = None  # other participant
+    participant_email: EmailStr | None = None
+
+    @root_validator
+    def _validate_participant(cls, values):
+        user_id = values.get("user_id")
+        participant_email = values.get("participant_email")
+        if (user_id is None) == (participant_email is None):
+            raise ValueError("Provide exactly one of user_id or participant_email")
+        return values
 
 
 class DirectMessageThreadRead(BaseModel):
     id: int
     workspace_id: int
-    user1_id: int
-    user2_id: int
+    participants: List[UserPublic]
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -28,12 +38,14 @@ class DirectMessageCreate(BaseModel):
 class DirectMessageRead(BaseModel):
     id: int
     thread_id: int
-    sender_id: int
+    user_id: int = Field(..., alias="sender_id")
     content: str
     is_deleted: bool
     is_edited: bool
     created_at: datetime
     updated_at: Optional[datetime]
+    author: UserPublic = Field(..., alias="sender")
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True

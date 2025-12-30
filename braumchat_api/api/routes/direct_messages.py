@@ -11,6 +11,7 @@ from ...schemas.direct_message import (
     DirectMessageThreadRead,
 )
 from ...services import direct_message_service
+from ...services.user_service import get_user, get_user_by_email
 
 router = APIRouter(prefix="/dm", tags=["direct-messages"])
 
@@ -21,25 +22,58 @@ async def create_or_get_thread(
     db: AsyncSession = Depends(get_db_dep),
     user=Depends(get_current_user),
 ):
+    other_user_id = payload.user_id
+    if other_user_id is None and payload.participant_email is not None:
+        other = await get_user_by_email(db, payload.participant_email)
+        if not other:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        other_user_id = other.id
+
+    if other_user_id is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid payload")
+
     thread = await direct_message_service.get_or_create_thread(
         db,
         workspace_id=payload.workspace_id,
         user_a=user.id,
-        user_b=payload.user_id,
+        user_b=other_user_id,
     )
-    return thread
+
+    thread = await direct_message_service.get_thread(db, thread.id)
+    participants = [p for p in [thread.user1, thread.user2] if p is not None]
+    return {
+        "id": thread.id,
+        "workspace_id": thread.workspace_id,
+        "participants": participants,
+        "created_at": thread.created_at,
+        "updated_at": thread.updated_at,
+    }
 
 
 @router.get("/threads", response_model=List[DirectMessageThreadRead])
 async def list_threads(
     workspace_id: int | None = None,
+    q: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
     db: AsyncSession = Depends(get_db_dep),
     user=Depends(get_current_user),
 ):
+    limit = max(1, min(limit, 50))
+    offset = max(0, offset)
     threads = await direct_message_service.list_threads(
-        db, user_id=user.id, workspace_id=workspace_id
+        db, user_id=user.id, workspace_id=workspace_id, query=q, limit=limit, offset=offset
     )
-    return threads
+    return [
+        {
+            "id": t.id,
+            "workspace_id": t.workspace_id,
+            "participants": [p for p in [t.user1, t.user2] if p is not None],
+            "created_at": t.created_at,
+            "updated_at": t.updated_at,
+        }
+        for t in threads
+    ]
 
 
 async def _get_thread_or_404(db: AsyncSession, thread_id: int):
