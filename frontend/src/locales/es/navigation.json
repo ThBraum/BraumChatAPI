@@ -1,0 +1,13 @@
+{
+    "workspace": "Espacio",
+    "channels": "Canales",
+    "directMessages": "Mensajes directos",
+    "createChannel": "Nuevo canal",
+    "createThread": "Nuevo DM",
+    "profile": "Perfil",
+    "sessions": "Sesiones",
+    "logout": "Cerrar sesión",
+    "presence": "Presencia",
+    "devices": "Dispositivos",
+    "selectWorkspace": "Selecciona un espacio"
+}

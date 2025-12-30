@@ -1,0 +1,19 @@
+{
+    "emptyState": {
+        "title": "Selecciona un canal",
+        "subtitle": "Elige un canal o DM del workspace"
+    },
+    "composer": {
+        "placeholder": "Mensaje para #{{name}}",
+        "send": "Enviar",
+        "typing": "{{user}} está escribiendo"
+    },
+    "presence": {
+        "title": "Conectados",
+        "empty": "Nadie en línea"
+    },
+    "messages": {
+        "today": "Hoy",
+        "yesterday": "Ayer"
+    }
+}

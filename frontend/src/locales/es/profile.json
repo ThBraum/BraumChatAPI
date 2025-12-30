@@ -1,0 +1,13 @@
+{
+    "title": "Perfil",
+    "subtitle": "Administra cómo te ven tus compañeros",
+    "email": "Correo",
+    "displayName": "Nombre visible",
+    "sessions": {
+        "title": "Sesiones",
+        "current": "Este dispositivo",
+        "revoke": "Cerrar",
+        "empty": "Sin otros dispositivos activos"
+    },
+    "notice": "La edición del perfil estará disponible pronto"
+}

@@ -1,0 +1,13 @@
+{
+    "title": "Profile",
+    "subtitle": "Manage how other teammates see you",
+    "email": "Email",
+    "displayName": "Display name",
+    "sessions": {
+        "title": "Sessions",
+        "current": "This device",
+        "revoke": "Sign out",
+        "empty": "No other active devices"
+    },
+    "notice": "Profile editing will be available soon"
+}
