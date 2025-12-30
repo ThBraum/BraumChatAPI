@@ -43,6 +43,10 @@ aiosqlite = "^0.21.0"
 minversion = "6.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
+filterwarnings = [
+	'ignore:Please use `import python_multipart` instead.:PendingDeprecationWarning',
+	"ignore:.*'crypt' is deprecated.*:DeprecationWarning",
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

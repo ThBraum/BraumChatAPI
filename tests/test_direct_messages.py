@@ -7,8 +7,8 @@ from braumchat_api.services import direct_message_service
 
 @pytest.mark.asyncio
 async def test_direct_message_thread_creation_and_messages(db_session):
-    user1 = User(email="a@example.com", hashed_password="x")
-    user2 = User(email="b@example.com", hashed_password="y")
+    user1 = User(email="a@example.com", username="a", hashed_password="x")
+    user2 = User(email="b@example.com", username="b", hashed_password="y")
     workspace = Workspace(name="Acme", slug="acme", owner_id=1)
     db_session.add_all([user1, user2, workspace])
     await db_session.commit()
