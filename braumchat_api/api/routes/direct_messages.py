@@ -12,6 +12,7 @@ from ...schemas.direct_message import (
 )
 from ...services import direct_message_service
 from ...services.user_service import get_user, get_user_by_email
+from ...realtime.manager import manager
 
 router = APIRouter(prefix="/dm", tags=["direct-messages"])
 
@@ -83,7 +84,11 @@ async def _get_thread_or_404(db: AsyncSession, thread_id: int):
     return thread
 
 
-@router.get("/threads/{thread_id}/messages", response_model=List[DirectMessageRead])
+@router.get(
+    "/threads/{thread_id}/messages",
+    response_model=List[DirectMessageRead],
+    response_model_by_alias=False,
+)
 async def list_thread_messages(
     thread_id: int,
     limit: int = 50,
@@ -102,7 +107,11 @@ async def list_thread_messages(
     return messages
 
 
-@router.post("/threads/{thread_id}/messages", response_model=DirectMessageRead)
+@router.post(
+    "/threads/{thread_id}/messages",
+    response_model=DirectMessageRead,
+    response_model_by_alias=False,
+)
 async def post_thread_message(
     thread_id: int,
     payload: DirectMessageCreate,
@@ -120,4 +129,30 @@ async def post_thread_message(
         sender_id=user.id,
         content=payload.content,
     )
-    return message
+
+    author = message.sender
+    ws_payload = {
+        "id": message.id,
+        "thread_id": message.thread_id,
+        "user_id": message.sender_id,
+        "client_id": payload.client_id,
+        "content": message.content,
+        "author": {
+            "id": author.id,
+            "display_name": author.display_name,
+            "avatar_url": author.avatar_url,
+        },
+        "created_at": message.created_at.isoformat() if message.created_at else None,
+        "updated_at": message.updated_at.isoformat() if message.updated_at else None,
+        "is_deleted": message.is_deleted,
+        "is_edited": message.is_edited,
+    }
+
+    # Broadcast para participantes conectados (realtime) mantendo formato esperado no frontend.
+    try:
+        await manager.broadcast(f"dm:{thread.id}", {"type": "message", "payload": ws_payload})
+    except Exception:
+        # Best-effort; o REST já retornou sucesso.
+        pass
+    # Retorna formato consistente com o realtime (e inclui client_id opcional).
+    return ws_payload

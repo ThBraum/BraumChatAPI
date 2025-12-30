@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.deps import get_current_user, get_db_dep
+from ...db.redis import redis as redis_client
 from ...schemas.user import UserPublic
+from ...services import presence_service
 from ...services.user_service import get_user_by_display_name, search_users_by_display_name
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -44,3 +46,22 @@ async def search(
 ):
     limit = max(1, min(limit, 50))
     return await search_users_by_display_name(db, query=q, limit=limit)
+
+
+@router.get("/online")
+async def online(
+    ids: str,
+    user=Depends(get_current_user),
+):
+    """Return online status for a comma-separated list of user IDs."""
+
+    raw = [part.strip() for part in ids.split(",") if part.strip()]
+    user_ids: list[int] = []
+    for part in raw:
+        try:
+            user_ids.append(int(part))
+        except ValueError:
+            continue
+
+    online_map = await presence_service.get_online_map(redis_client, user_ids)
+    return [{"user_id": uid, "online": bool(online_map.get(uid, False))} for uid in user_ids]

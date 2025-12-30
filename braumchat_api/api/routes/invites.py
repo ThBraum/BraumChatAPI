@@ -11,14 +11,22 @@ from ...services import invite_service
 router = APIRouter()
 
 
+def _user_public(u) -> dict:
+    return {
+        "id": u.id,
+        "display_name": u.display_name,
+        "avatar_url": u.avatar_url,
+    }
+
+
 def _to_read(invite) -> dict:
     return {
         "id": invite.id,
         "workspace_id": invite.workspace_id,
         "workspace_name": invite.workspace.name if invite.workspace else "",
         "status": invite.status,
-        "inviter": invite.inviter,
-        "invitee": invite.invitee,
+        "inviter": _user_public(invite.inviter) if invite.inviter else None,
+        "invitee": _user_public(invite.invitee) if invite.invitee else None,
         "created_at": invite.created_at,
     }
 

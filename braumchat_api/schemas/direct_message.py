@@ -33,6 +33,7 @@ class DirectMessageThreadRead(BaseModel):
 
 class DirectMessageCreate(BaseModel):
     content: str
+    client_id: Optional[str] = None
 
 
 class DirectMessageRead(BaseModel):
@@ -40,6 +41,7 @@ class DirectMessageRead(BaseModel):
     thread_id: int
     user_id: int = Field(..., alias="sender_id")
     content: str
+    client_id: Optional[str] = None
     is_deleted: bool
     is_edited: bool
     created_at: datetime

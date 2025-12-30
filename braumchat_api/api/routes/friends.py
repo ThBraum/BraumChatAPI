@@ -97,7 +97,17 @@ async def accept(
 
     await manager.broadcast(
         f"notify:{req.requester_id}",
-        {"type": "friend.accepted", "payload": {"id": req.id}},
+        {
+            "type": "friend.accepted",
+            "payload": {
+                "id": req.id,
+                "by": {
+                    "id": user.id,
+                    "display_name": user.display_name,
+                    "avatar_url": user.avatar_url,
+                },
+            },
+        },
     )
 
     return req
@@ -120,7 +130,17 @@ async def decline(
 
     await manager.broadcast(
         f"notify:{req.requester_id}",
-        {"type": "friend.declined", "payload": {"id": req.id}},
+        {
+            "type": "friend.declined",
+            "payload": {
+                "id": req.id,
+                "by": {
+                    "id": user.id,
+                    "display_name": user.display_name,
+                    "avatar_url": user.avatar_url,
+                },
+            },
+        },
     )
 
     return req

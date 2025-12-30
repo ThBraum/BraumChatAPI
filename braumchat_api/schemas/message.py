@@ -8,6 +8,7 @@ from .user import UserPublic
 
 class MessageCreate(BaseModel):
     content: str
+    client_id: Optional[str] = None
 
 
 class MessageRead(BaseModel):
@@ -15,6 +16,7 @@ class MessageRead(BaseModel):
     channel_id: int
     user_id: int
     content: str
+    client_id: Optional[str] = None
     is_edited: bool
     is_deleted: bool
     created_at: Optional[datetime]
