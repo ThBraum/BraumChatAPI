@@ -5,10 +5,11 @@ import { format } from "date-fns";
 
 import type { Message } from "@/lib/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 
 interface MessageListProps {
   messages: Message[];
+  currentUserId?: string | null;
 }
 
 type AuthorLike = { display_name?: string | null };
@@ -44,7 +45,7 @@ const groupByDay = (messages: Message[]) => {
   return groups;
 };
 
-export const MessageList = ({ messages }: MessageListProps) => {
+export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
   const grouped = useMemo(() => groupByDay(messages), [messages]);
 
   const orderedDays = useMemo(() => {
@@ -59,19 +60,37 @@ export const MessageList = ({ messages }: MessageListProps) => {
             {format(new Date(day), "EEEE, MMM d")}
           </div>
           <ul className="space-y-4">
-            {(grouped[day] ?? []).map((message) => (
+            {(grouped[day] ?? []).map((message) => {
+              const isOwn =
+                currentUserId != null &&
+                String(message.user_id) === String(currentUserId);
+
+              return (
               <li
                 key={message.id}
                 data-message-id={String(message.id)}
-                className="flex gap-3"
+                className={cn(
+                  "flex gap-3",
+                  isOwn ? "flex-row-reverse justify-end" : "justify-start",
+                )}
               >
                 <Avatar className="h-10 w-10">
                   <AvatarFallback>
                     {getInitials(getMessageAuthorDisplayName(message))}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    "min-w-0 flex-1",
+                    isOwn ? "flex flex-col items-end text-right" : "text-left",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex items-center gap-2",
+                      isOwn ? "flex-row-reverse justify-end" : "justify-start",
+                    )}
+                  >
                     <span className="text-sm font-semibold text-foreground">
                       {getMessageAuthorDisplayName(message)}
                     </span>
@@ -79,12 +98,13 @@ export const MessageList = ({ messages }: MessageListProps) => {
                       {format(new Date(message.created_at), "HH:mm")}
                     </span>
                   </div>
-                  <p className="text-sm text-foreground/90">
+                  <p className={cn("text-sm text-foreground/90", "break-words")}>
                     {message.content}
                   </p>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </Fragment>
       ))}

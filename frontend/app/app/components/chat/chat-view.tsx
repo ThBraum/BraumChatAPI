@@ -26,9 +26,10 @@ export const ChatView = ({
   channelId,
   threadId,
 }: ChatViewProps) => {
-  const { apiFetch, accessToken } = useAuth();
+  const { apiFetch, accessToken, user } = useAuth();
   const queryClient = useQueryClient();
   const { t } = useTranslation(["chat"]);
+  const currentUserId = user?.id ?? null;
 
   const channelQuery = useQuery<Channel>({
     queryKey: ["channel", channelId],
@@ -169,7 +170,10 @@ export const ChatView = ({
           </p>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <MessageList messages={messagesQuery.data ?? []} />
+          <MessageList
+            messages={messagesQuery.data ?? []}
+            currentUserId={currentUserId}
+          />
         </div>
         <MessageComposer
           placeholder={t("chat:composer.placeholder", { name: title })}
