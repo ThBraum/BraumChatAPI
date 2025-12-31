@@ -1,5 +1,6 @@
 {
     "appName": "ChattingWork",
+    "backendUnavailable": "后端在 {{url}} 不可用 — 部分功能可能失败。",
     "loading": "加载中...",
     "search": "搜索",
     "language": "语言",
@@ -8,11 +9,79 @@
     "dark": "深色",
     "save": "保存",
     "cancel": "取消",
+    "close": "关闭",
     "soon": "即将推出",
     "status": {
         "online": "在线",
         "offline": "离线",
         "typing": "正在输入..."
+    },
+    "labels": {
+        "id": "ID",
+        "from": "来自"
+    },
+    "tabs": {
+        "workspaces": "工作区",
+        "contacts": "联系人",
+        "directMessages": "私信"
+    },
+    "workspaces": {
+        "title": "工作区",
+        "create": "创建",
+        "namePrompt": "工作区名称",
+        "slugPrompt": "Slug（可选）",
+        "active": "已激活",
+        "select": "选择",
+        "empty": "暂无工作区。",
+        "defaultName": "我的工作区",
+        "autoCreateError": "无法自动创建工作区：{{message}}"
+    },
+    "contacts": {
+        "title": "联系人",
+        "searchPlaceholder": "按显示名称搜索（至少 2 个字符）",
+        "searching": "搜索中...",
+        "invite": "邀请",
+        "openDm": "打开私信",
+        "selectWorkspaceFirst": "请先选择一个工作区",
+        "inviteTitle": "邀请加入当前工作区",
+        "openDmTitle": "打开私信",
+        "noUsersFound": "未找到用户。",
+        "minChars": "请输入至少 2 个字符。"
+    },
+    "invites": {
+        "title": "添加好友",
+        "prompt": "要邀请的显示名称",
+        "incoming": "待处理",
+        "outgoing": "已发送",
+        "pending": "待处理",
+        "accept": "接受",
+        "decline": "拒绝",
+        "none": "暂无邀请。",
+        "sent": "邀请已发送。",
+        "error": "无法发送邀请：{{message}}"
+    },
+    "notifications": {
+        "friendAccepted": "你的好友请求已被接受。",
+        "friendAcceptedBy": "{{name}} 接受了你的好友请求。",
+        "friendDeclined": "你的好友请求已被拒绝。",
+        "friendDeclinedBy": "{{name}} 拒绝了你的好友请求。",
+        "workspaceInviteAccepted": "{{name}} 接受了你加入工作区 {{workspace}} 的邀请。",
+        "workspaceInviteAcceptedGeneric": "你的工作区邀请已被接受。",
+        "workspaceInviteDeclined": "{{name}} 拒绝了你加入工作区 {{workspace}} 的邀请。",
+        "workspaceInviteDeclinedGeneric": "你的工作区邀请已被拒绝。"
+    },
+    "loadMore": "加载更多",
+    "friends": {
+        "none": "暂无好友。"
+    },
+    "directMessages": {
+        "title": "私信",
+        "empty": "暂无私信。",
+        "open": "打开",
+        "searchPlaceholder": "搜索最近会话"
+    },
+    "protected": {
+        "loading": "加载中..."
     },
     "placeholders": {
         "search": "按姓名或频道搜索"

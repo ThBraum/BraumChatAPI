@@ -3,10 +3,21 @@
         "title": "Select a channel",
         "subtitle": "Choose a workspace channel or DM to get started"
     },
+    "header": {
+        "realtime": "Messages are synced in realtime"
+    },
+    "dm": {
+        "subtitle": "{{code}} • {{status}}",
+        "subtitleNoCode": "{{status}}",
+        "unknownUser": "Direct Message"
+    },
+    "userFallback": "User {{id}}",
     "composer": {
         "placeholder": "Message #{{name}}",
+        "placeholderDm": "Message @{{name}}",
         "send": "Send",
-        "typing": "{{user}} is typing"
+        "typing": "{{user}} is typing",
+        "typingMultiple": "{{users}} are typing"
     },
     "presence": {
         "title": "Online",

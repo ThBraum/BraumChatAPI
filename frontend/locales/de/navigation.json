@@ -1,11 +1,41 @@
 {
   "home": "Startseite",
   "chat": "Chat",
+  "workspace": "Workspace",
+  "channels": "Kanäle",
+  "directMessages": "Direktnachrichten",
+  "invites": "Einladungen",
+  "createChannel": "Neuer Kanal",
+  "createThread": "Neuer DM",
   "profile": "Profil",
+  "sessions": "Sitzungen",
+  "presence": "Präsenz",
+  "devices": "Geräte",
+  "selectWorkspace": "Workspace auswählen",
+  "workspacesPage": {
+    "title": "Workspaces",
+    "create": "Erstellen",
+    "active": "Aktiv",
+    "select": "Auswählen",
+    "prompts": {
+      "name": "Workspace-Name",
+      "slug": "Slug (optional)"
+    },
+    "empty": {
+      "title": "Erstelle einen Workspace und lade Leute ein",
+      "subtitle": "Richte einen Bereich für dein Team oder deine Community ein und lade Personen ein, um zusammenzuarbeiten und Gespräche organisiert zu halten.",
+      "createWorkspace": "Workspace erstellen",
+      "inviteLinkTitle": "Lade jemanden zu {{appName}} ein",
+      "inviteLinkSubtitle": "Teile diesen Link mit einer neuen Person. Nach der Anmeldung kann sie dir automatisch eine Freundschaftsanfrage senden.",
+      "copyInviteLink": "Link kopieren",
+      "copied": "Kopiert"
+    }
+  },
   "settings": "Einstellungen",
   "logout": "Abmelden",
   "directMessagesPage": {
     "title": "Direktnachrichten",
+    "loadMore": "Mehr laden",
     "tabs": {
       "invite": "Einladen",
       "friends": "Freunde",

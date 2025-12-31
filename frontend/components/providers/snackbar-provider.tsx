@@ -3,6 +3,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 
 import { Snackbar, type SnackbarVariant } from "@/components/ui/snackbar";
+import { initI18n } from "@/lib/i18n/config";
 
 type SnackbarPayload = {
     variant: SnackbarVariant;
@@ -12,12 +13,13 @@ type SnackbarPayload = {
 
 type SnackbarContextValue = {
     showSnackbar: (payload: SnackbarPayload) => void;
+    closeSnackbar?: () => void;
 };
 
 const SnackbarContext = createContext<SnackbarContextValue | null>(null);
 
-const TOTAL_MS = 4500;
-const FADE_MS = 800; // < 1s
+const TOTAL_MS = 5000;
+const FADE_MS = 1000;
 const PROGRESS_MS = TOTAL_MS - FADE_MS;
 
 export function SnackbarProvider({ children }: { children: React.ReactNode }) {
@@ -45,11 +47,38 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    const closeSnackbar = useCallback(() => {
+        cleanupTimers();
+        setFading(false);
+        setOpen(false);
+        setPayload(null);
+        setProgress(0);
+    }, [cleanupTimers]);
+
     const showSnackbar = useCallback(
         (next: SnackbarPayload) => {
             cleanupTimers();
 
-            setPayload(next);
+            const i18n = initI18n();
+
+            const resolveText = (value?: string) => {
+                if (!value) return undefined;
+
+                if (value.includes(":")) return i18n.t(value);
+
+                if (value.startsWith("snackbar.")) return i18n.t(value, { ns: "auth" });
+
+                const translated = i18n.t(value);
+                if (translated === value && i18n.exists(value, { ns: "auth" })) {
+                    return i18n.t(value, { ns: "auth" });
+                }
+                return translated;
+            };
+
+            const resolvedTitle = resolveText(next.title);
+            const resolvedMessage = resolveText(next.message) ?? next.message;
+
+            setPayload({ ...next, title: resolvedTitle, message: resolvedMessage });
             setOpen(true);
             setFading(false);
 
@@ -92,7 +121,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
         [cleanupTimers],
     );
 
-    const value = useMemo(() => ({ showSnackbar }), [showSnackbar]);
+    const value = useMemo(() => ({ showSnackbar, closeSnackbar }), [showSnackbar, closeSnackbar]);
 
     return (
         <SnackbarContext.Provider value={value}>
@@ -104,6 +133,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
                 message={payload?.message ?? ""}
                 progress={progress}
                 fading={fading}
+                onClose={closeSnackbar}
             />
         </SnackbarContext.Provider>
     );

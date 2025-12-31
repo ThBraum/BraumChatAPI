@@ -4,8 +4,34 @@
     "typing": "schreibt...",
     "send": "Senden",
     "placeholder": "Schreibe eine Nachricht...",
+    "emptyState": {
+        "title": "Kanal auswählen",
+        "subtitle": "Wähle einen Workspace-Kanal oder eine DM, um zu starten"
+    },
+    "header": {
+        "realtime": "Nachrichten werden in Echtzeit synchronisiert"
+    },
+    "dm": {
+        "subtitle": "{{code}} • {{status}}",
+        "subtitleNoCode": "{{status}}",
+        "unknownUser": "Direktnachricht"
+    },
+    "userFallback": "Benutzer {{id}}",
+    "composer": {
+        "placeholder": "Nachricht #{{name}}",
+        "placeholderDm": "Nachricht an @{{name}}",
+        "send": "Senden",
+        "typing": "{{user}} schreibt",
+        "typingMultiple": "{{users}} schreiben"
+    },
     "presence": {
+        "title": "Online",
+        "empty": "Niemand sonst ist online",
         "online": "Online",
         "offline": "Offline"
+    },
+    "messages": {
+        "today": "Heute",
+        "yesterday": "Gestern"
     }
 }

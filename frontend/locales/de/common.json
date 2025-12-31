@@ -1,5 +1,6 @@
 {
     "appName": "ChattingWork",
+    "backendUnavailable": "Backend nicht verfügbar unter {{url}} — einige Funktionen können fehlschlagen.",
     "loading": "Lädt...",
     "search": "Suchen",
     "language": "Sprache",
@@ -8,11 +9,79 @@
     "dark": "Dunkel",
     "save": "Speichern",
     "cancel": "Abbrechen",
+    "close": "Schließen",
     "soon": "bald",
     "status": {
         "online": "Online",
         "offline": "Offline",
         "typing": "schreibt..."
+    },
+    "labels": {
+        "id": "id",
+        "from": "von"
+    },
+    "tabs": {
+        "workspaces": "Workspaces",
+        "contacts": "Kontakte",
+        "directMessages": "Direktnachrichten"
+    },
+    "workspaces": {
+        "title": "Workspaces",
+        "create": "Erstellen",
+        "namePrompt": "Workspace-Name",
+        "slugPrompt": "Slug (optional)",
+        "active": "Aktiv",
+        "select": "Auswählen",
+        "empty": "Noch keine Workspaces.",
+        "defaultName": "Mein Workspace",
+        "autoCreateError": "Workspace konnte nicht automatisch erstellt werden: {{message}}"
+    },
+    "contacts": {
+        "title": "Kontakte",
+        "searchPlaceholder": "Nach Anzeigename suchen (min. 2)",
+        "searching": "Suche...",
+        "invite": "Einladen",
+        "openDm": "DM öffnen",
+        "selectWorkspaceFirst": "Wähle zuerst einen Workspace",
+        "inviteTitle": "In den aktiven Workspace einladen",
+        "openDmTitle": "DM öffnen",
+        "noUsersFound": "Keine Nutzer gefunden.",
+        "minChars": "Gib mindestens 2 Zeichen ein."
+    },
+    "invites": {
+        "title": "Freund hinzufügen",
+        "prompt": "Anzeigename zum Einladen",
+        "incoming": "Ausstehend",
+        "outgoing": "Gesendet",
+        "pending": "Ausstehend",
+        "accept": "Annehmen",
+        "decline": "Ablehnen",
+        "none": "Keine Einladungen.",
+        "sent": "Einladung gesendet.",
+        "error": "Einladung konnte nicht gesendet werden: {{message}}"
+    },
+    "notifications": {
+        "friendAccepted": "Deine Freundschaftsanfrage wurde angenommen.",
+        "friendAcceptedBy": "{{name}} hat deine Freundschaftsanfrage angenommen.",
+        "friendDeclined": "Deine Freundschaftsanfrage wurde abgelehnt.",
+        "friendDeclinedBy": "{{name}} hat deine Freundschaftsanfrage abgelehnt.",
+        "workspaceInviteAccepted": "{{name}} hat deine Workspace-Einladung zu {{workspace}} angenommen.",
+        "workspaceInviteAcceptedGeneric": "Deine Workspace-Einladung wurde angenommen.",
+        "workspaceInviteDeclined": "{{name}} hat deine Workspace-Einladung zu {{workspace}} abgelehnt.",
+        "workspaceInviteDeclinedGeneric": "Deine Workspace-Einladung wurde abgelehnt."
+    },
+    "loadMore": "Mehr laden",
+    "friends": {
+        "none": "Noch keine Freunde."
+    },
+    "directMessages": {
+        "title": "Direktnachrichten",
+        "empty": "Noch keine Direktnachrichten.",
+        "open": "Öffnen",
+        "searchPlaceholder": "Letzte Unterhaltungen suchen"
+    },
+    "protected": {
+        "loading": "Lädt..."
     },
     "placeholders": {
         "search": "Nach Namen oder Kanal suchen"

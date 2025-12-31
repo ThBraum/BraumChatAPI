@@ -4,8 +4,34 @@
   "typing": "正在输入...",
   "send": "发送",
   "placeholder": "输入消息...",
+  "emptyState": {
+    "title": "选择一个频道",
+    "subtitle": "选择一个工作区频道或私信开始聊天"
+  },
+  "header": {
+    "realtime": "消息将实时同步"
+  },
+  "dm": {
+    "subtitle": "{{code}} • {{status}}",
+    "subtitleNoCode": "{{status}}",
+    "unknownUser": "私信"
+  },
+  "userFallback": "用户 {{id}}",
+  "composer": {
+    "placeholder": "发送到 #{{name}}",
+    "placeholderDm": "发送给 @{{name}}",
+    "send": "发送",
+    "typing": "{{user}} 正在输入",
+    "typingMultiple": "{{users}} 正在输入"
+  },
   "presence": {
+    "title": "在线",
+    "empty": "暂无其他人在线",
     "online": "在线",
     "offline": "离线"
+  },
+  "messages": {
+    "today": "今天",
+    "yesterday": "昨天"
   }
 }

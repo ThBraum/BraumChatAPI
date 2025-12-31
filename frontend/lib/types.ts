@@ -34,6 +34,7 @@ export interface Thread {
 
 export interface Message {
 	id: string;
+	client_id?: string;
 	content: string;
 	created_at: string;
 	user_id: string;
@@ -45,6 +46,11 @@ export interface Message {
 export interface PresenceUser {
 	user_id: string;
 	display_name?: string;
+}
+
+export interface UserOnlineStatus {
+	user_id: string;
+	online: boolean;
 }
 
 export interface Session {
@@ -77,6 +83,10 @@ export interface FriendRequest {
 
 export type MessagePayload =
 	| { type: "message"; payload: Message }
-	| { type: "typing"; payload: { user_id: string; is_typing: boolean } };
+	| { type: "typing"; payload: { user_id: string | number; is_typing: boolean } }
+	| { type: "presence"; payload: { user_id: string | number; online: boolean } };
 
-export type WsOutgoingPayload = { type: "typing"; is_typing: boolean };
+export type WsOutgoingPayload =
+	| { type: "typing"; is_typing: boolean }
+	| { type: "message"; content: string; client_id?: string }
+	| { type: "ping" };

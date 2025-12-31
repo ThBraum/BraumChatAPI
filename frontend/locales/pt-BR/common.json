@@ -9,6 +9,7 @@
     "dark": "Escuro",
     "save": "Salvar",
     "cancel": "Cancelar",
+    "close": "Fechar",
     "soon": "em breve",
     "status": {
         "online": "Disponível",
@@ -16,7 +17,8 @@
         "typing": "digitando..."
     },
     "labels": {
-        "id": "id"
+        "id": "id",
+        "from": "de"
     },
     "tabs": {
         "workspaces": "Workspaces",
@@ -30,7 +32,9 @@
         "slugPrompt": "Slug (opcional)",
         "active": "Ativo",
         "select": "Selecionar",
-        "empty": "Nenhum workspace ainda."
+        "empty": "Nenhum workspace ainda.",
+        "defaultName": "Meu workspace",
+        "autoCreateError": "Não foi possível criar um workspace automaticamente: {{message}}"
     },
     "contacts": {
         "title": "Contatos",
@@ -44,10 +48,37 @@
         "noUsersFound": "Nenhum usuário encontrado.",
         "minChars": "Digite pelo menos 2 caracteres."
     },
+    "invites": {
+        "title": "Adicionar amigo",
+        "prompt": "Display name para convidar",
+        "incoming": "Pendentes",
+        "outgoing": "Enviados",
+        "pending": "Pendente",
+        "accept": "Aceitar",
+        "decline": "Recusar",
+        "none": "Nenhum convite.",
+        "sent": "Convite enviado.",
+        "error": "Não foi possível enviar o convite: {{message}}"
+    },
+    "notifications": {
+        "friendAccepted": "Seu pedido de amizade foi aceito.",
+        "friendAcceptedBy": "{{name}} aceitou seu pedido de amizade.",
+        "friendDeclined": "Seu pedido de amizade foi recusado.",
+        "friendDeclinedBy": "{{name}} recusou seu pedido de amizade.",
+        "workspaceInviteAccepted": "{{name}} aceitou seu convite para o workspace {{workspace}}.",
+        "workspaceInviteAcceptedGeneric": "Seu convite para workspace foi aceito.",
+        "workspaceInviteDeclined": "{{name}} recusou seu convite para o workspace {{workspace}}.",
+        "workspaceInviteDeclinedGeneric": "Seu convite para workspace foi recusado."
+    },
+    "loadMore": "Carregar mais",
+    "friends": {
+        "none": "Você ainda não tem amigos."
+    },
     "directMessages": {
         "title": "Mensagens diretas",
         "empty": "Nenhuma mensagem direta ainda.",
-        "open": "Abrir"
+        "open": "Abrir",
+        "searchPlaceholder": "Buscar conversas recentes"
     },
     "protected": {
         "loading": "Carregando..."

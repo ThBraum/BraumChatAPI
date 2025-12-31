@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import type { Channel, Thread, Workspace, WorkspaceInvite } from "@/lib/types";
+import type { Channel, FriendRequest, Thread, Workspace, WorkspaceInvite } from "@/lib/types";
 import { queryKeys } from "@/lib/query-keys";
 
 interface SidebarProps {
@@ -23,6 +23,7 @@ const SidebarContent = ({
     channels,
     threads,
     invites,
+    friendRequests,
     onSelectChannel,
     onSelectThread,
     activeChannelId,
@@ -31,10 +32,14 @@ const SidebarContent = ({
     onCreateThread,
     onAcceptInvite,
     onDeclineInvite,
+    onAcceptFriendRequest,
+    onDeclineFriendRequest,
+    currentUserId,
 }: {
     channels: Channel[];
     threads: Thread[];
     invites: WorkspaceInvite[];
+    friendRequests: FriendRequest[];
     onSelectChannel: (id: string) => void;
     onSelectThread: (id: string) => void;
     activeChannelId: string | null;
@@ -43,8 +48,32 @@ const SidebarContent = ({
     onCreateThread: () => void;
     onAcceptInvite: (id: string) => void;
     onDeclineInvite: (id: string) => void;
+    onAcceptFriendRequest: (id: string) => void;
+    onDeclineFriendRequest: (id: string) => void;
+    currentUserId: string | null;
 }) => {
     const { t } = useTranslation(["navigation", "common"]);
+
+    const splitDiscordDisplayName = (displayName: string) => {
+        const idx = displayName.lastIndexOf("#");
+        if (idx > 0 && idx < displayName.length - 1) {
+            return displayName.slice(0, idx);
+        }
+        return displayName;
+    };
+
+    const getThreadLabel = (thread: Thread) => {
+        const participants = thread.participants ?? [];
+        const others = currentUserId
+            ? participants.filter((p) => String(p.id) !== String(currentUserId))
+            : participants;
+        const displayList = (others.length > 0 ? others : participants)
+            .map((p) => splitDiscordDisplayName(p.display_name ?? String(p.id)))
+            .filter(Boolean);
+        return displayList.join(", ") || "Direct Message";
+    };
+
+    const pendingCount = invites.length + friendRequests.length;
 
     return (
         <div className="flex h-full flex-col">
@@ -99,7 +128,7 @@ const SidebarContent = ({
                                 >
                                     <MessageSquare className="h-4 w-4" />
                                     <span className="truncate text-left text-sm">
-                                        {thread.participants.map((p) => p.display_name).join(", ")}
+                                        {getThreadLabel(thread)}
                                     </span>
                                 </button>
                             </li>
@@ -112,9 +141,40 @@ const SidebarContent = ({
                     </ul>
 
                     <div className="mt-8 mb-4 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        <span>{t("navigation:invites")}{invites.length ? ` (${invites.length})` : ""}</span>
+                        <span>
+                            {t("navigation:invites")}
+                            {pendingCount ? ` (${pendingCount})` : ""}
+                        </span>
                     </div>
                     <ul className="space-y-2">
+                        {friendRequests.map((req) => (
+                            <li key={`fr:${req.id}`} className="rounded-md border bg-background/50 px-3 py-2">
+                                <div className="text-sm text-foreground truncate">
+                                    {req.requester.display_name ?? req.requester.id}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                    {t("common:invites.title", { defaultValue: "Adicionar amigo" })}
+                                </div>
+                                <div className="mt-2 flex gap-2">
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        onClick={() => onAcceptFriendRequest(String(req.id))}
+                                    >
+                                        {t("common:invites.accept")}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        onClick={() => onDeclineFriendRequest(String(req.id))}
+                                    >
+                                        {t("common:invites.decline")}
+                                    </Button>
+                                </div>
+                            </li>
+                        ))}
                         {invites.map((invite) => (
                             <li key={invite.id} className="rounded-md border bg-background/50 px-3 py-2">
                                 <div className="text-sm text-foreground truncate">
@@ -143,7 +203,7 @@ const SidebarContent = ({
                                 </div>
                             </li>
                         ))}
-                        {invites.length === 0 && (
+                        {pendingCount === 0 && (
                             <li className="px-3 py-2 text-xs text-muted-foreground">
                                 {t("common:invites.none")}
                             </li>
@@ -166,7 +226,7 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
         activeThreadId,
         setActiveThreadId,
     } = useAppShell();
-    const { t } = useTranslation(["navigation"]);
+    const { t } = useTranslation(["navigation", "common"]);
     const [open, setOpen] = useState(false);
 
     const channelsQuery = useQuery<Channel[]>({
@@ -184,6 +244,12 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
     const invitesQuery = useQuery<WorkspaceInvite[]>({
         queryKey: queryKeys.incomingInvites,
         queryFn: () => apiFetch(`/invites/incoming`),
+        enabled: !!user,
+    });
+
+    const friendRequestsPreviewQuery = useQuery<FriendRequest[]>({
+        queryKey: queryKeys.friendRequestsIncomingPreview,
+        queryFn: () => apiFetch(`/friends/requests/incoming?limit=10&offset=0`),
         enabled: !!user,
     });
 
@@ -238,9 +304,30 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
         },
     });
 
+    const acceptFriendRequestMutation = useMutation({
+        mutationFn: async (requestId: string) => apiFetch(`/friends/requests/${requestId}/accept`, { method: "POST" }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.friendRequestsIncoming });
+            queryClient.invalidateQueries({ queryKey: queryKeys.friendRequestsIncomingPreview });
+            queryClient.invalidateQueries({ queryKey: queryKeys.friendRequestsOutgoing });
+            queryClient.invalidateQueries({ queryKey: ["friends"] });
+        },
+    });
+
+    const declineFriendRequestMutation = useMutation({
+        mutationFn: async (requestId: string) => apiFetch(`/friends/requests/${requestId}/decline`, { method: "POST" }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.friendRequestsIncoming });
+            queryClient.invalidateQueries({ queryKey: queryKeys.friendRequestsIncomingPreview });
+        },
+    });
+
     const channels = channelsQuery.data ?? [];
     const threads = threadsQuery.data ?? [];
     const invites = invitesQuery.data ?? [];
+    const friendRequests = friendRequestsPreviewQuery.data ?? [];
+
+    const pendingCount = invites.length + friendRequests.length;
 
     const handleCreateChannel = () => {
         if (!activeWorkspaceId) return;
@@ -270,6 +357,8 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
             channels={channels}
             threads={threads}
             invites={invites}
+            friendRequests={friendRequests}
+            currentUserId={user?.id ? String(user.id) : null}
             onSelectChannel={(id) => {
                 setActiveThreadId(null);
                 setActiveChannelId(id);
@@ -286,6 +375,8 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
             onCreateThread={handleCreateThread}
             onAcceptInvite={(id) => acceptInviteMutation.mutate(id)}
             onDeclineInvite={(id) => declineInviteMutation.mutate(id)}
+            onAcceptFriendRequest={(id) => acceptFriendRequestMutation.mutate(id)}
+            onDeclineFriendRequest={(id) => declineFriendRequestMutation.mutate(id)}
         />
     );
 
@@ -298,6 +389,11 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
             <aside className="hidden w-64 flex-col border-r bg-card md:flex">
                 <div className="flex items-center justify-between px-4 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <span className="truncate">{workspaceLabel}</span>
+                    {pendingCount > 0 && (
+                        <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
+                            {pendingCount}
+                        </span>
+                    )}
                     <Button
                         variant="ghost"
                         size="icon"
@@ -315,11 +411,21 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
             <div className="flex items-center border-b px-4 py-2 md:hidden">
                 <Sheet open={open} onOpenChange={setOpen}>
                     <SheetTrigger asChild>
-                        <Button variant="outline" size="sm">
-                            {workspaceLabel}
+                        <Button variant="outline" size="sm" className="gap-2">
+                            <span className="truncate">{workspaceLabel}</span>
+                            {pendingCount > 0 && (
+                                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
+                                    {pendingCount}
+                                </span>
+                            )}
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="left" className="w-72 p-0">
+                    <SheetContent
+                        side="left"
+                        className="w-72 p-0"
+                        title={workspaceLabel}
+                        closeLabel={t("common:close")}
+                    >
                         <div className="flex items-center justify-between border-b px-4 py-3 text-sm font-semibold">
                             <span className="truncate">{workspaceLabel}</span>
                             <Button

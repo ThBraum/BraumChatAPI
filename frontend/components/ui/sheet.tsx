@@ -32,8 +32,10 @@ const SheetContent = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Content>,
     React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
         side?: "left" | "right" | "top" | "bottom";
+        title: string;
+        closeLabel: string;
     }
->(({ side = "right", className, children, ...props }, ref) => (
+>(({ side = "right", className, title, closeLabel, children, ...props }, ref) => (
     <SheetPortal>
         <SheetOverlay />
         <DialogPrimitive.Content
@@ -48,10 +50,11 @@ const SheetContent = React.forwardRef<
             )}
             {...props}
         >
+            <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
             {children}
             <SheetClose className="absolute right-4 top-4 rounded-full bg-muted p-1 text-muted-foreground transition hover:text-foreground">
                 <X className="h-4 w-4" />
-                <span className="sr-only">Close</span>
+                <span className="sr-only">{closeLabel}</span>
             </SheetClose>
         </DialogPrimitive.Content>
     </SheetPortal>
