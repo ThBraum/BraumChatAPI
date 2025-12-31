@@ -15,271 +15,271 @@ import type { Channel, Thread, Workspace } from "@/lib/types";
 import { queryKeys } from "@/lib/query-keys";
 
 interface SidebarProps {
-  workspaces: Workspace[];
+    workspaces: Workspace[];
 }
 
 const SidebarContent = ({
-  channels,
-  threads,
-  onSelectChannel,
-  onSelectThread,
-  activeChannelId,
-  activeThreadId,
-  onCreateChannel,
-  onCreateThread,
-  currentUserId,
+    channels,
+    threads,
+    onSelectChannel,
+    onSelectThread,
+    activeChannelId,
+    activeThreadId,
+    onCreateChannel,
+    onCreateThread,
+    currentUserId,
 }: {
-  channels: Channel[];
-  threads: Thread[];
-  onSelectChannel: (id: string) => void;
-  onSelectThread: (id: string) => void;
-  activeChannelId: string | null;
-  activeThreadId: string | null;
-  onCreateChannel: () => void;
-  onCreateThread: () => void;
-  currentUserId: string | null;
+    channels: Channel[];
+    threads: Thread[];
+    onSelectChannel: (id: string) => void;
+    onSelectThread: (id: string) => void;
+    activeChannelId: string | null;
+    activeThreadId: string | null;
+    onCreateChannel: () => void;
+    onCreateThread: () => void;
+    currentUserId: string | null;
 }) => {
-  const { t } = useTranslation(["navigation", "common"]);
+    const { t } = useTranslation(["navigation", "common"]);
 
-  const splitDiscordDisplayName = (displayName: string) => {
-    const idx = displayName.lastIndexOf("#");
-    if (idx > 0 && idx < displayName.length - 1) {
-      return displayName.slice(0, idx);
-    }
-    return displayName;
-  };
+    const splitDiscordDisplayName = (displayName: string) => {
+        const idx = displayName.lastIndexOf("#");
+        if (idx > 0 && idx < displayName.length - 1) {
+            return displayName.slice(0, idx);
+        }
+        return displayName;
+    };
 
-  const getThreadLabel = (thread: Thread) => {
-    const participants = thread.participants ?? [];
-    const others = currentUserId
-      ? participants.filter((p) => String(p.id) !== String(currentUserId))
-      : participants;
-    const displayList = (others.length > 0 ? others : participants)
-      .map((p) => splitDiscordDisplayName(p.display_name ?? String(p.id)))
-      .filter(Boolean);
-    return displayList.join(", ") || "Direct Message";
-  };
+    const getThreadLabel = (thread: Thread) => {
+        const participants = thread.participants ?? [];
+        const others = currentUserId
+            ? participants.filter((p) => String(p.id) !== String(currentUserId))
+            : participants;
+        const displayList = (others.length > 0 ? others : participants)
+            .map((p) => splitDiscordDisplayName(p.display_name ?? String(p.id)))
+            .filter(Boolean);
+        return displayList.join(", ") || "Direct Message";
+    };
 
-  return (
-    <div className="flex h-full flex-col">
-      <ScrollArea className="flex-1">
-        <div className="px-4 py-6">
-          <div className="mb-4 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <span>{t("navigation:channels")}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={onCreateChannel}
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <ul className="space-y-1">
-            {channels.map((channel) => (
-              <li key={channel.id}>
-                <button
-                  onClick={() => onSelectChannel(channel.id)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground",
-                    activeChannelId === channel.id &&
-                      "bg-accent text-accent-foreground",
-                  )}
-                >
-                  <span className="text-xs text-muted-foreground">#</span>
-                  <span className="truncate text-left text-sm">
-                    {channel.name}
-                  </span>
-                  {channel.is_private && (
-                    <Users className="ml-auto h-3.5 w-3.5 opacity-70" />
-                  )}
-                </button>
-              </li>
-            ))}
-            {channels.length === 0 && (
-              <li className="px-3 py-2 text-xs text-muted-foreground">
-                {t("navigation:createChannel")}
-              </li>
-            )}
-          </ul>
+    return (
+        <div className="flex h-full flex-col">
+            <ScrollArea className="flex-1">
+                <div className="px-4 py-6">
+                    <div className="mb-4 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <span>{t("navigation:channels")}</span>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={onCreateChannel}
+                        >
+                            <Plus className="h-3.5 w-3.5" />
+                        </Button>
+                    </div>
+                    <ul className="space-y-1">
+                        {channels.map((channel) => (
+                            <li key={channel.id}>
+                                <button
+                                    onClick={() => onSelectChannel(channel.id)}
+                                    className={cn(
+                                        "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground",
+                                        activeChannelId === channel.id &&
+                                        "bg-accent text-accent-foreground",
+                                    )}
+                                >
+                                    <span className="text-xs text-muted-foreground">#</span>
+                                    <span className="truncate text-left text-sm">
+                                        {channel.name}
+                                    </span>
+                                    {channel.is_private && (
+                                        <Users className="ml-auto h-3.5 w-3.5 opacity-70" />
+                                    )}
+                                </button>
+                            </li>
+                        ))}
+                        {channels.length === 0 && (
+                            <li className="px-3 py-2 text-xs text-muted-foreground">
+                                {t("navigation:createChannel")}
+                            </li>
+                        )}
+                    </ul>
 
-          <div className="mt-8 mb-4 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <span>{t("navigation:directMessages")}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={onCreateThread}
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <ul className="space-y-1">
-            {threads.map((thread) => (
-              <li key={thread.id}>
-                <button
-                  onClick={() => onSelectThread(thread.id)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground",
-                    activeThreadId === thread.id &&
-                      "bg-accent text-accent-foreground",
-                  )}
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="truncate text-left text-sm">
-                    {getThreadLabel(thread)}
-                  </span>
-                </button>
-              </li>
-            ))}
-            {threads.length === 0 && (
-              <li className="px-3 py-2 text-xs text-muted-foreground">
-                {t("navigation:createThread")}
-              </li>
-            )}
-          </ul>
+                    <div className="mt-8 mb-4 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <span>{t("navigation:directMessages")}</span>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={onCreateThread}
+                        >
+                            <Plus className="h-3.5 w-3.5" />
+                        </Button>
+                    </div>
+                    <ul className="space-y-1">
+                        {threads.map((thread) => (
+                            <li key={thread.id}>
+                                <button
+                                    onClick={() => onSelectThread(thread.id)}
+                                    className={cn(
+                                        "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground",
+                                        activeThreadId === thread.id &&
+                                        "bg-accent text-accent-foreground",
+                                    )}
+                                >
+                                    <MessageSquare className="h-4 w-4" />
+                                    <span className="truncate text-left text-sm">
+                                        {getThreadLabel(thread)}
+                                    </span>
+                                </button>
+                            </li>
+                        ))}
+                        {threads.length === 0 && (
+                            <li className="px-3 py-2 text-xs text-muted-foreground">
+                                {t("navigation:createThread")}
+                            </li>
+                        )}
+                    </ul>
+                </div>
+            </ScrollArea>
         </div>
-      </ScrollArea>
-    </div>
-  );
+    );
 };
 
 export const Sidebar = ({ workspaces }: SidebarProps) => {
-  const { apiFetch, user } = useAuth();
-  const queryClient = useQueryClient();
-  const {
-    activeWorkspaceId,
-    activeChannelId,
-    setActiveChannelId,
-    activeThreadId,
-    setActiveThreadId,
-  } = useAppShell();
-  const { t } = useTranslation(["navigation", "common"]);
-  const [open, setOpen] = useState(false);
+    const { apiFetch, user } = useAuth();
+    const queryClient = useQueryClient();
+    const {
+        activeWorkspaceId,
+        activeChannelId,
+        setActiveChannelId,
+        activeThreadId,
+        setActiveThreadId,
+    } = useAppShell();
+    const { t } = useTranslation(["navigation", "common"]);
+    const [open, setOpen] = useState(false);
 
-  const channelsQuery = useQuery<Channel[]>({
-    queryKey: queryKeys.channels(activeWorkspaceId ?? undefined),
-    queryFn: () => apiFetch(`/workspaces/${activeWorkspaceId}/channels`),
-    enabled: !!activeWorkspaceId,
-  });
-
-  const threadsQuery = useQuery<Thread[]>({
-    queryKey: queryKeys.threadsList(activeWorkspaceId ?? undefined),
-    queryFn: () =>
-      apiFetch(
-        `/dm/threads?workspace_id=${encodeURIComponent(activeWorkspaceId ?? "")}`,
-      ),
-    enabled: !!activeWorkspaceId,
-  });
-
-  const createChannelMutation = useMutation({
-    mutationFn: async (name: string) => {
-      return apiFetch(`/workspaces/${activeWorkspaceId}/channels`, {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    const channelsQuery = useQuery<Channel[]>({
         queryKey: queryKeys.channels(activeWorkspaceId ?? undefined),
-      });
-    },
-  });
+        queryFn: () => apiFetch(`/workspaces/${activeWorkspaceId}/channels`),
+        enabled: !!activeWorkspaceId,
+    });
 
-  const createThreadMutation = useMutation({
-    mutationFn: async (participant: string) => {
-      if (!activeWorkspaceId) throw new Error("Missing active workspace");
-      return apiFetch(`/dm/threads`, {
-        method: "POST",
-        body: JSON.stringify({
-          workspace_id: Number(activeWorkspaceId),
-          participant_email: participant,
-        }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    const threadsQuery = useQuery<Thread[]>({
         queryKey: queryKeys.threadsList(activeWorkspaceId ?? undefined),
-      });
-    },
-  });
+        queryFn: () =>
+            apiFetch(
+                `/dm/threads?workspace_id=${encodeURIComponent(activeWorkspaceId ?? "")}`,
+            ),
+        enabled: !!activeWorkspaceId,
+    });
 
-  const channels = channelsQuery.data ?? [];
-  const threads = threadsQuery.data ?? [];
+    const createChannelMutation = useMutation({
+        mutationFn: async (name: string) => {
+            return apiFetch(`/workspaces/${activeWorkspaceId}/channels`, {
+                method: "POST",
+                body: JSON.stringify({ name }),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.channels(activeWorkspaceId ?? undefined),
+            });
+        },
+    });
 
-  const handleCreateChannel = () => {
-    if (!activeWorkspaceId) return;
-    const name = prompt(t("navigation:createChannel") ?? "New channel");
-    if (name) {
-      createChannelMutation.mutate(name);
-    }
-  };
+    const createThreadMutation = useMutation({
+        mutationFn: async (participant: string) => {
+            if (!activeWorkspaceId) throw new Error("Missing active workspace");
+            return apiFetch(`/dm/threads`, {
+                method: "POST",
+                body: JSON.stringify({
+                    workspace_id: Number(activeWorkspaceId),
+                    participant_email: participant,
+                }),
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.threadsList(activeWorkspaceId ?? undefined),
+            });
+        },
+    });
 
-  const handleCreateThread = () => {
-    const email = prompt(t("navigation:createThread") ?? "New DM");
-    if (email) {
-      createThreadMutation.mutate(email);
-    }
-  };
+    const channels = channelsQuery.data ?? [];
+    const threads = threadsQuery.data ?? [];
 
-  const content = (
-    <SidebarContent
-      channels={channels}
-      threads={threads}
-      currentUserId={user?.id ? String(user.id) : null}
-      onSelectChannel={(id) => {
-        setActiveThreadId(null);
-        setActiveChannelId(id);
-        setOpen(false);
-      }}
-      onSelectThread={(id) => {
-        setActiveChannelId(null);
-        setActiveThreadId(id);
-        setOpen(false);
-      }}
-      activeChannelId={activeChannelId}
-      activeThreadId={activeThreadId}
-      onCreateChannel={handleCreateChannel}
-      onCreateThread={handleCreateThread}
-    />
-  );
+    const handleCreateChannel = () => {
+        if (!activeWorkspaceId) return;
+        const name = prompt(t("navigation:createChannel") ?? "New channel");
+        if (name) {
+            createChannelMutation.mutate(name);
+        }
+    };
 
-  const workspaceLabel = useMemo(() => {
-    return (
-      workspaces.find((w) => w.id === activeWorkspaceId)?.name ??
-      t("navigation:workspace")
+    const handleCreateThread = () => {
+        const email = prompt(t("navigation:createThread") ?? "New DM");
+        if (email) {
+            createThreadMutation.mutate(email);
+        }
+    };
+
+    const content = (
+        <SidebarContent
+            channels={channels}
+            threads={threads}
+            currentUserId={user?.id ? String(user.id) : null}
+            onSelectChannel={(id) => {
+                setActiveThreadId(null);
+                setActiveChannelId(id);
+                setOpen(false);
+            }}
+            onSelectThread={(id) => {
+                setActiveChannelId(null);
+                setActiveThreadId(id);
+                setOpen(false);
+            }}
+            activeChannelId={activeChannelId}
+            activeThreadId={activeThreadId}
+            onCreateChannel={handleCreateChannel}
+            onCreateThread={handleCreateThread}
+        />
     );
-  }, [activeWorkspaceId, t, workspaces]);
 
-  return (
-    <>
-      <aside className="hidden w-64 flex-col border-r bg-card md:flex">
-        <div className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {workspaceLabel}
-        </div>
-        {content}
-      </aside>
+    const workspaceLabel = useMemo(() => {
+        return (
+            workspaces.find((w) => w.id === activeWorkspaceId)?.name ??
+            t("navigation:workspace")
+        );
+    }, [activeWorkspaceId, t, workspaces]);
 
-      <div className="flex items-center border-b px-4 py-2 md:hidden">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm">
-              {workspaceLabel}
-            </Button>
-          </SheetTrigger>
-          <SheetContent
-            side="left"
-            className="w-72 p-0"
-            title={workspaceLabel}
-            closeLabel={t("common:close")}
-          >
-            <div className="border-b px-4 py-3 text-sm font-semibold">
-              {workspaceLabel}
+    return (
+        <>
+            <aside className="hidden w-64 flex-col border-r bg-card md:flex">
+                <div className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {workspaceLabel}
+                </div>
+                {content}
+            </aside>
+
+            <div className="flex items-center border-b px-4 py-2 md:hidden">
+                <Sheet open={open} onOpenChange={setOpen}>
+                    <SheetTrigger asChild>
+                        <Button variant="outline" size="sm">
+                            {workspaceLabel}
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent
+                        side="left"
+                        className="w-72 p-0"
+                        title={workspaceLabel}
+                        closeLabel={t("common:close")}
+                    >
+                        <div className="border-b px-4 py-3 text-sm font-semibold">
+                            {workspaceLabel}
+                        </div>
+                        {content}
+                    </SheetContent>
+                </Sheet>
             </div>
-            {content}
-          </SheetContent>
-        </Sheet>
-      </div>
-    </>
-  );
+        </>
+    );
 };

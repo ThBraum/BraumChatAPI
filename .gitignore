@@ -24,3 +24,9 @@ venv/
 # Misc
 .DS_Store
 asyncpg-0.27.0-cp311-cp311-macosx_11_0_arm64.whl
+
+# Node / Frontend
+node_modules/
+.cache/
+.parcel-cache/
+.turbo/

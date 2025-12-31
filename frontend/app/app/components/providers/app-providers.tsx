@@ -7,15 +7,15 @@ import { I18nProvider } from "@/components/providers/i18n-provider";
 import { SnackbarProvider } from "@/components/providers/snackbar-provider";
 
 export const AppProviders = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <ThemeProvider>
-      <QueryProvider>
-        <I18nProvider>
-          <SnackbarProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </SnackbarProvider>
-        </I18nProvider>
-      </QueryProvider>
-    </ThemeProvider>
-  );
+    return (
+        <ThemeProvider>
+            <QueryProvider>
+                <I18nProvider>
+                    <SnackbarProvider>
+                        <AuthProvider>{children}</AuthProvider>
+                    </SnackbarProvider>
+                </I18nProvider>
+            </QueryProvider>
+        </ThemeProvider>
+    );
 };

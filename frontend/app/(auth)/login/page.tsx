@@ -212,11 +212,10 @@ export default function LoginPage() {
               <div className="grid gap-4 min-w-0 sm:grid-cols-3">
                 {stats.map((stat) => {
                   const hasDetail = Boolean(stat.detail);
-                  const cardClasses = `rounded-2xl border border-border/60 bg-card/40 p-6 text-center flex flex-col items-center justify-center min-h-[5.25rem] w-full overflow-hidden ${
-                    hasDetail
+                  const cardClasses = `rounded-2xl border border-border/60 bg-card/40 p-6 text-center flex flex-col items-center justify-center min-h-[5.25rem] w-full overflow-hidden ${hasDetail
                       ? "max-w-full md:max-w-[14rem] lg:max-w-[20rem]"
                       : "max-w-full md:max-w-[11rem] lg:max-w-[14rem]"
-                  }`;
+                    }`;
                   const numberClasses = `${hasDetail ? "text-lg md:text-xl lg:text-2xl" : "text-xl md:text-2xl lg:text-3xl"} font-semibold leading-tight max-w-full break-words`;
 
                   return (
