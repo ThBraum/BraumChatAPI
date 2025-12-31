@@ -685,7 +685,10 @@ export const ChatView = ({
           onScroll={handleMessageScroll}
           className="mt-4 flex-1 overflow-y-auto"
         >
-          <MessageList messages={messagesQuery.data ?? []} />
+          <MessageList
+            messages={messagesQuery.data ?? []}
+            currentUserId={currentUserId}
+          />
           <div ref={messageBottomRef} />
         </div>
 
