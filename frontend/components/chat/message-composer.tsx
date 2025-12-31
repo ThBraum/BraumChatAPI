@@ -17,7 +17,12 @@ interface MessageComposerProps {
   onTyping?: (isTyping: boolean) => void;
 }
 
-export const MessageComposer = ({ placeholder, onSend, isSending, onTyping }: MessageComposerProps) => {
+export const MessageComposer = ({
+  placeholder,
+  onSend,
+  isSending,
+  onTyping,
+}: MessageComposerProps) => {
   const { t } = useTranslation(["chat"]);
 
   const form = useForm<MessageValues>({
@@ -31,7 +36,10 @@ export const MessageComposer = ({ placeholder, onSend, isSending, onTyping }: Me
 
   const bumpTyping = (timestampMs?: number) => {
     if (!onTyping) return;
-    const now = typeof timestampMs === "number" && timestampMs > 0 ? timestampMs : Date.now();
+    const now =
+      typeof timestampMs === "number" && timestampMs > 0
+        ? timestampMs
+        : Date.now();
 
     // Allow re-sending `true` while already typing as a keepalive.
     if (!isTyping || now - lastTypingSentAt > 1200) {

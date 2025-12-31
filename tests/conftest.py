@@ -3,9 +3,9 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 import braumchat_api.models  # noqa: F401 - ensure models are registered
+from braumchat_api.api.deps import get_db_dep
 from braumchat_api.main import app
 from braumchat_api.models.meta import Base
-from braumchat_api.api.deps import get_db_dep
 
 
 @pytest_asyncio.fixture

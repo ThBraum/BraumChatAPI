@@ -11,4 +11,4 @@ docker compose exec -T api alembic downgrade -1
 ```bash
 Downgrade specific version
 docker compose exec -T api alembic downgrade 0b9f4f0f6b4a
-``` 
+```

@@ -1,7 +1,6 @@
 from sqlalchemy import and_, or_, select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, selectinload
 
 from ..models.direct_message import DirectMessage
 from ..models.direct_message_thread import DirectMessageThread
@@ -41,6 +40,7 @@ async def get_or_create_thread(
     )
     threads = result.scalars().all()
     if threads:
+
         def _sort_key(t: DirectMessageThread):
             return (t.updated_at or t.created_at, t.id)
 
@@ -80,10 +80,10 @@ async def list_threads(
         .join(user1, DirectMessageThread.user1_id == user1.id)
         .join(user2, DirectMessageThread.user2_id == user2.id)
         .where(
-        or_(
-            DirectMessageThread.user1_id == user_id,
-            DirectMessageThread.user2_id == user_id,
-        )
+            or_(
+                DirectMessageThread.user1_id == user_id,
+                DirectMessageThread.user2_id == user_id,
+            )
         )
     )
     # workspace_id é um filtro de UI; para manter DMs consistentes entre workspaces,

@@ -64,7 +64,9 @@ export const MessageList = ({ messages }: MessageListProps) => {
                       {format(new Date(message.created_at), "HH:mm")}
                     </span>
                   </div>
-                  <p className="text-sm text-foreground/90">{message.content}</p>
+                  <p className="text-sm text-foreground/90">
+                    {message.content}
+                  </p>
                 </div>
               </li>
             ))}

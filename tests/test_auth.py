@@ -1,5 +1,6 @@
-import pytest
 import re
+
+import pytest
 
 
 @pytest.mark.asyncio
@@ -40,7 +41,9 @@ async def test_register_generates_unique_discriminator(client):
     assert r2.status_code == 200
 
     u2 = r2.json()
-    assert re.match(r"^Joao#\d{4}$", u2["display_name"]) or re.match(r"^joao#\d{4}$", u2["display_name"], re.IGNORECASE)
+    assert re.match(r"^Joao#\d{4}$", u2["display_name"]) or re.match(
+        r"^joao#\d{4}$", u2["display_name"], re.IGNORECASE
+    )
     assert u1["display_name"].lower() != u2["display_name"].lower()
 
 

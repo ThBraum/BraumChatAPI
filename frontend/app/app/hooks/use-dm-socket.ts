@@ -11,7 +11,11 @@ interface DmSocketOptions {
   onMessage?: (payload: MessagePayload) => void;
 }
 
-export const useDmSocket = ({ threadId, token, onMessage }: DmSocketOptions) => {
+export const useDmSocket = ({
+  threadId,
+  token,
+  onMessage,
+}: DmSocketOptions) => {
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<NodeJS.Timeout | null>(null);
 

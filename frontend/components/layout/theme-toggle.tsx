@@ -25,7 +25,11 @@ export const ThemeToggle = () => {
       disabled={!mounted}
     >
       {mounted ? (
-        isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />
+        isDark ? (
+          <Moon className="h-4 w-4" />
+        ) : (
+          <Sun className="h-4 w-4" />
+        )
       ) : (
         <span className="h-4 w-4" />
       )}
