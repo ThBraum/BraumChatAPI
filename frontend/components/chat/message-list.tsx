@@ -60,7 +60,11 @@ export const MessageList = ({ messages }: MessageListProps) => {
           </div>
           <ul className="space-y-4">
             {(grouped[day] ?? []).map((message) => (
-              <li key={message.id} className="flex gap-3">
+              <li
+                key={message.id}
+                data-message-id={String(message.id)}
+                className="flex gap-3"
+              >
                 <Avatar className="h-10 w-10">
                   <AvatarFallback>
                     {getInitials(getMessageAuthorDisplayName(message))}

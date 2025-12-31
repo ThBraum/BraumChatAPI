@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -49,6 +56,43 @@ export const ChatView = ({
   const messageBottomRef = useRef<HTMLDivElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
   const didInitialScrollRef = useRef<string | null>(null);
+  const scrollAnchorMessageIdRef = useRef<string | null>(null);
+  const scrollAnchorOffsetPxRef = useRef<number>(0);
+
+  const escapeAttrValue = useCallback((value: string) => {
+    if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+      return CSS.escape(value);
+    }
+    return value.replace(/"/g, "\\\"");
+  }, []);
+
+  const captureScrollAnchor = useCallback(() => {
+    const el = messageScrollRef.current;
+    if (!el) return;
+
+    const messageEls = el.querySelectorAll<HTMLElement>("[data-message-id]");
+    if (messageEls.length === 0) return;
+
+    const containerTop = el.getBoundingClientRect().top;
+    for (const messageEl of Array.from(messageEls)) {
+      const rect = messageEl.getBoundingClientRect();
+      const isVisible = rect.bottom > containerTop;
+      if (!isVisible) continue;
+
+      const id = messageEl.dataset.messageId;
+      if (!id) continue;
+      scrollAnchorMessageIdRef.current = id;
+      scrollAnchorOffsetPxRef.current = rect.top - containerTop;
+      return;
+    }
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    const el = messageScrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+    shouldStickToBottomRef.current = true;
+  }, []);
 
   const sortMessagesAsc = useCallback((messages: Message[]) => {
     return [...messages].sort((a, b) => {
@@ -549,7 +593,11 @@ export const ChatView = ({
     if (!el) return;
     const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     shouldStickToBottomRef.current = distanceToBottom < 64;
-  }, []);
+
+    if (!shouldStickToBottomRef.current) {
+      captureScrollAnchor();
+    }
+  }, [captureScrollAnchor]);
 
   // Scroll inicial para o final (mensagens mais recentes embaixo).
   useEffect(() => {
@@ -562,17 +610,41 @@ export const ChatView = ({
     if (messagesQuery.isLoading) return;
     if (didInitialScrollRef.current === key) return;
 
+    shouldStickToBottomRef.current = true;
+    scrollAnchorMessageIdRef.current = null;
+
     didInitialScrollRef.current = key;
     requestAnimationFrame(() => {
-      messageBottomRef.current?.scrollIntoView({ block: "end" });
+      scrollToBottom();
     });
-  }, [channelId, messagesQuery.isLoading, threadId]);
+  }, [channelId, messagesQuery.isLoading, scrollToBottom, threadId]);
 
   // Mantém no final quando novas mensagens chegam (se usuário já estava no final).
   useEffect(() => {
     if (!shouldStickToBottomRef.current) return;
-    messageBottomRef.current?.scrollIntoView({ block: "end" });
-  }, [messagesQuery.data?.length]);
+    scrollToBottom();
+  }, [messagesQuery.data?.length, scrollToBottom]);
+
+  // Se o usuário não está no bottom, preserve a posição exata do scroll quando a lista muda.
+  useLayoutEffect(() => {
+    const el = messageScrollRef.current;
+    if (!el) return;
+    if (shouldStickToBottomRef.current) return;
+
+    const anchorId = scrollAnchorMessageIdRef.current;
+    if (!anchorId) return;
+
+    const selector = `[data-message-id="${escapeAttrValue(anchorId)}"]`;
+    const anchorEl = el.querySelector<HTMLElement>(selector);
+    if (!anchorEl) return;
+
+    const containerTop = el.getBoundingClientRect().top;
+    const currentOffset = anchorEl.getBoundingClientRect().top - containerTop;
+    const desiredOffset = scrollAnchorOffsetPxRef.current;
+    const delta = currentOffset - desiredOffset;
+    if (!Number.isFinite(delta) || Math.abs(delta) < 0.5) return;
+    el.scrollTop += delta;
+  }, [escapeAttrValue, messagesQuery.data?.length]);
 
   if (!channelId && !threadId) {
     return (
