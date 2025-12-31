@@ -1,10 +1,11 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.deps import get_current_user, get_db_dep
+from ...realtime.manager import manager
 from ...schemas.invite import WorkspaceInviteCreate, WorkspaceInviteRead
 from ...schemas.workspace import WorkspaceCreate, WorkspaceRead
 from ...services import invite_service
@@ -15,7 +16,6 @@ from ...services.workspace_service import (
     get_workspace_member,
     list_workspaces,
 )
-from ...realtime.manager import manager
 
 router = APIRouter()
 
@@ -68,7 +68,9 @@ async def invite_user(
     if not invitee:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if invitee.id == user.id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot invite yourself")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot invite yourself"
+        )
 
     try:
         invite = await invite_service.create_invite(
@@ -78,7 +80,9 @@ async def invite_user(
             invitee_user_id=invitee.id,
         )
     except IntegrityError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invite already pending")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invite already pending"
+        )
 
     # realtime notify invitee
     await manager.broadcast(

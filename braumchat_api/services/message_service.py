@@ -1,6 +1,6 @@
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..models.message import Message
 
@@ -11,9 +11,7 @@ async def create_message(db: AsyncSession, channel_id: int, user_id: int, conten
     await db.commit()
     await db.refresh(msg)
     q = await db.execute(
-        select(Message)
-        .options(selectinload(Message.user))
-        .where(Message.id == msg.id)
+        select(Message).options(selectinload(Message.user)).where(Message.id == msg.id)
     )
     return q.scalars().first()
 

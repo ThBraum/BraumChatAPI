@@ -349,4 +349,3 @@ async def ws_direct_message(
                     "payload": {"user_id": user_id, "online": False},
                 },
             )
-

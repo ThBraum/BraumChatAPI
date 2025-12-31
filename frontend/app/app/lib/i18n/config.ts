@@ -41,75 +41,75 @@ const sharedProfile = enProfile;
 export const defaultNS = "common";
 
 const resources = {
-	en: {
-		common: enCommon,
-		auth: enAuth,
-		chat: enChat,
-		navigation: enNav,
-		profile: enProfile,
-	},
-	"pt-BR": {
-		common: ptCommon,
-		auth: ptAuth,
-		chat: ptChat,
-		navigation: ptNav,
-		profile: ptProfile,
-	},
-	es: {
-		common: esCommon,
-		auth: esAuth,
-		chat: esChat,
-		navigation: esNav,
-		profile: esProfile,
-	},
-	fr: {
-		common: frCommon,
-		auth: frAuth,
-		chat: frChat,
-		navigation: frNav,
-		profile: frProfile,
-	},
-	de: {
-		common: deCommon,
-		auth: deAuth,
-		chat: deChat,
-		navigation: deNav,
-		profile: sharedProfile,
-	},
-	zh: {
-		common: zhCommon,
-		auth: zhAuth,
-		chat: zhChat,
-		navigation: zhNav,
-		profile: sharedProfile,
-	},
+  en: {
+    common: enCommon,
+    auth: enAuth,
+    chat: enChat,
+    navigation: enNav,
+    profile: enProfile,
+  },
+  "pt-BR": {
+    common: ptCommon,
+    auth: ptAuth,
+    chat: ptChat,
+    navigation: ptNav,
+    profile: ptProfile,
+  },
+  es: {
+    common: esCommon,
+    auth: esAuth,
+    chat: esChat,
+    navigation: esNav,
+    profile: esProfile,
+  },
+  fr: {
+    common: frCommon,
+    auth: frAuth,
+    chat: frChat,
+    navigation: frNav,
+    profile: frProfile,
+  },
+  de: {
+    common: deCommon,
+    auth: deAuth,
+    chat: deChat,
+    navigation: deNav,
+    profile: sharedProfile,
+  },
+  zh: {
+    common: zhCommon,
+    auth: zhAuth,
+    chat: zhChat,
+    navigation: zhNav,
+    profile: sharedProfile,
+  },
 } as const;
 
 export const supportedLngs = Object.keys(resources);
 
 export const initI18n = () => {
-	if (!i18n.isInitialized) {
-		i18n
-			.use(LanguageDetector)
-			.use(initReactI18next)
-			.init({
-				resources,
-				fallbackLng: "en",
-				lng: "en",
-				ns: Object.keys(resources.en),
-				defaultNS,
-				supportedLngs,
-				initImmediate: false,
-				react: { useSuspense: false },
-				detection: {
-					order: ["localStorage", "navigator"],
-					caches: ["localStorage"],
-				},
-				interpolation: { escapeValue: false },
-			})
-			.catch((error: unknown) => {
-				console.error("i18n init error", error);
-			});
-	}
-	return i18n;
+  if (!i18n.isInitialized) {
+    i18n
+      .use(LanguageDetector)
+      .use(initReactI18next)
+      .init({
+        resources,
+        fallbackLng: "en",
+        lng: "en",
+        ns: Object.keys(resources.en),
+        defaultNS,
+        supportedLngs,
+        initImmediate: false,
+        react: { useSuspense: false },
+        detection: {
+          order: ["localStorage", "navigator"],
+          caches: ["localStorage"],
+        },
+        interpolation: { escapeValue: false },
+      })
+      .catch((error: unknown) => {
+        console.error("i18n init error", error);
+      });
+  }
+  return i18n;
 };

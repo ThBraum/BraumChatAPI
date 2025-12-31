@@ -12,11 +12,21 @@ const WorkspaceSurface = () => {
   const { activeWorkspaceId, activeChannelId, activeThreadId } = useAppShell();
 
   if (!activeWorkspaceId) {
-    return <EmptyState title={t("chat:emptyState.title")} subtitle={t("chat:emptyState.subtitle")} />;
+    return (
+      <EmptyState
+        title={t("chat:emptyState.title")}
+        subtitle={t("chat:emptyState.subtitle")}
+      />
+    );
   }
 
   if (!activeChannelId && !activeThreadId) {
-    return <EmptyState title={t("chat:emptyState.title")} subtitle={t("chat:emptyState.subtitle")} />;
+    return (
+      <EmptyState
+        title={t("chat:emptyState.title")}
+        subtitle={t("chat:emptyState.subtitle")}
+      />
+    );
   }
 
   return (
@@ -28,7 +38,13 @@ const WorkspaceSurface = () => {
   );
 };
 
-const EmptyState = ({ title, subtitle }: { title: string; subtitle: string }) => (
+const EmptyState = ({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle: string;
+}) => (
   <div className="flex h-full flex-col items-center justify-center px-6 text-center">
     <div className="space-y-2">
       <h2 className="text-xl font-semibold tracking-tight">{title}</h2>

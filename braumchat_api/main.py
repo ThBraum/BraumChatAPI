@@ -33,9 +33,7 @@ def create_app() -> FastAPI:
     app.include_router(friends_router.router)
     app.include_router(workspaces_router.router, prefix="/workspaces", tags=["workspaces"])
     app.include_router(channels_router.router, prefix="/channels", tags=["channels"])
-    app.include_router(
-        messages_router.router, prefix="", tags=["messages"]
-    )
+    app.include_router(messages_router.router, prefix="", tags=["messages"])
     app.include_router(dm_router.router)
     # WebSocket endpoints
     app.include_router(realtime_router.router)

@@ -25,7 +25,9 @@ async def _login(client, *, email: str, password: str) -> dict:
 @pytest.mark.asyncio
 async def test_workspace_and_channel_acl_blocks_non_member(client):
     await _register(client, email="owner@example.com", password="secret123", display_name="owner")
-    await _register(client, email="outsider@example.com", password="secret123", display_name="outsider")
+    await _register(
+        client, email="outsider@example.com", password="secret123", display_name="outsider"
+    )
 
     owner_tokens = await _login(client, email="owner@example.com", password="secret123")
     outsider_tokens = await _login(client, email="outsider@example.com", password="secret123")

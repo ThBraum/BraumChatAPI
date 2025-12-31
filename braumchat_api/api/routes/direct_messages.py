@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.deps import get_current_user, get_db_dep
+from ...realtime.manager import manager
 from ...schemas.direct_message import (
     DirectMessageCreate,
     DirectMessageRead,
@@ -12,7 +13,6 @@ from ...schemas.direct_message import (
 )
 from ...services import direct_message_service
 from ...services.user_service import get_user, get_user_by_email
-from ...realtime.manager import manager
 
 router = APIRouter(prefix="/dm", tags=["direct-messages"])
 

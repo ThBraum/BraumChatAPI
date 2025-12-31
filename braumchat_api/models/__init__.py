@@ -9,8 +9,8 @@ from .meta import Base, BaseEntity  # noqa
 from .user import User  # noqa
 from .user_session import UserSession  # noqa
 from .workspace import Workspace  # noqa
-from .workspace_member import WorkspaceMember  # noqa
 from .workspace_invite import WorkspaceInvite  # noqa
+from .workspace_member import WorkspaceMember  # noqa
 
 __all__ = [
     "Base",

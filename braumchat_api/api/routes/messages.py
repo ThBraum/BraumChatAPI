@@ -1,18 +1,18 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.deps import get_current_user, get_db_dep
-from ...schemas.message import MessageCreate, MessageRead
-from ...services.message_service import create_message, list_messages
-from ...realtime.manager import manager
-from ...models.channel import Channel
-from ...services.workspace_service import get_workspace_member
 from ...config import get_settings
 from ...db.redis import redis as redis_client
+from ...models.channel import Channel
+from ...realtime.manager import manager
+from ...schemas.message import MessageCreate, MessageRead
 from ...security.rate_limit import RateLimitRule, enforce_rate_limit
+from ...services.message_service import create_message, list_messages
+from ...services.workspace_service import get_workspace_member
 
 router = APIRouter()
 settings = get_settings()

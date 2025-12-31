@@ -35,9 +35,7 @@ async def get_current_user(
     if session_id:
         session = await session_service.get_session_by_sid(db, str(session_id))
         if not session or session.user_id != user_id or session.revoked_at is not None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Session revoked"
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session revoked")
 
     user = await get_user(db, user_id)
     if not user:

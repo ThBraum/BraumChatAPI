@@ -1,14 +1,12 @@
 import random
 import re
 
+from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import HTTPException, status
-
 from ..models.user import User
 from ..security.security import hash_password
-
 
 _HANDLE_RE = re.compile(r"^(.{2,32})#(\d{4})$")
 

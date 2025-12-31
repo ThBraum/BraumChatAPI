@@ -6,19 +6,19 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.deps import get_current_user, get_db_dep
+from ...config import get_settings
+from ...db.redis import redis as redis_client
 from ...schemas.auth import LogoutRequest, Token, TokenRefreshRequest, UserSessionRead
 from ...schemas.user import UserCreate, UserRead
-from ...config import get_settings
-from ...security.security import decode_token
 from ...security.rate_limit import RateLimitRule, enforce_rate_limit
-from ...db.redis import redis as redis_client
+from ...security.security import decode_token
 from ...services import session_service
 from ...services.auth_service import authenticate_user, create_tokens_for_user
 from ...services.user_service import (
     create_user,
     get_user,
-    get_user_by_email,
     get_user_by_display_name,
+    get_user_by_email,
 )
 
 router = APIRouter()

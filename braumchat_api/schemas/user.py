@@ -17,7 +17,9 @@ class UserCreate(BaseModel):
 class UserRead(BaseModel):
     id: int
     email: EmailStr
-    display_name: Optional[str] = Field(default=None, min_length=7, max_length=37, regex=r"^.{2,32}#\d{4}$")
+    display_name: Optional[str] = Field(
+        default=None, min_length=7, max_length=37, regex=r"^.{2,32}#\d{4}$"
+    )
     avatar_url: Optional[str] = None
     is_active: bool
     is_superuser: bool
@@ -29,7 +31,9 @@ class UserRead(BaseModel):
 
 class UserPublic(BaseModel):
     id: int
-    display_name: Optional[str] = Field(default=None, min_length=7, max_length=37, regex=r"^.{2,32}#\d{4}$")
+    display_name: Optional[str] = Field(
+        default=None, min_length=7, max_length=37, regex=r"^.{2,32}#\d{4}$"
+    )
     avatar_url: Optional[str] = None
 
     class Config:

@@ -51,8 +51,7 @@ async def create_or_reopen_request(
 
     # if there is a pending request in the opposite direction, keep UX simple and block
     opposite = await db.execute(
-        select(FriendRequest)
-        .where(
+        select(FriendRequest).where(
             and_(
                 FriendRequest.requester_id == addressee_id,
                 FriendRequest.addressee_id == requester_id,

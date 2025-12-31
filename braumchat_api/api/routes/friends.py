@@ -23,7 +23,9 @@ async def list_friends(
 ):
     limit = max(1, min(limit, 50))
     offset = max(0, offset)
-    return await friend_service.list_friends(db, user_id=user.id, query=q, limit=limit, offset=offset)
+    return await friend_service.list_friends(
+        db, user_id=user.id, query=q, limit=limit, offset=offset
+    )
 
 
 @router.post("/requests", response_model=FriendRequestRead)
@@ -65,7 +67,9 @@ async def list_incoming(
 ):
     limit = max(1, min(limit, 50))
     offset = max(0, offset)
-    return await friend_service.list_incoming_requests(db, user_id=user.id, limit=limit, offset=offset)
+    return await friend_service.list_incoming_requests(
+        db, user_id=user.id, limit=limit, offset=offset
+    )
 
 
 @router.get("/requests/outgoing", response_model=List[FriendRequestRead])
@@ -77,7 +81,9 @@ async def list_outgoing(
 ):
     limit = max(1, min(limit, 50))
     offset = max(0, offset)
-    return await friend_service.list_outgoing_requests(db, user_id=user.id, limit=limit, offset=offset)
+    return await friend_service.list_outgoing_requests(
+        db, user_id=user.id, limit=limit, offset=offset
+    )
 
 
 @router.post("/requests/{request_id}/accept", response_model=FriendRequestRead)

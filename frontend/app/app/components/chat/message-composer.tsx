@@ -14,7 +14,11 @@ interface MessageComposerProps {
   isSending?: boolean;
 }
 
-export const MessageComposer = ({ placeholder, onSend, isSending }: MessageComposerProps) => {
+export const MessageComposer = ({
+  placeholder,
+  onSend,
+  isSending,
+}: MessageComposerProps) => {
   const form = useForm<MessageValues>({
     resolver: zodResolver(messageSchema),
     defaultValues: { content: "" },

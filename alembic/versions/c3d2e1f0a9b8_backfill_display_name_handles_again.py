@@ -11,9 +11,9 @@ from __future__ import annotations
 import random
 import re
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "c3d2e1f0a9b8"

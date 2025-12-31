@@ -1,92 +1,98 @@
 export interface User {
-	id: string;
-	email: string;
-	display_name: string;
-	avatar_url?: string | null;
+  id: string;
+  email: string;
+  display_name: string;
+  avatar_url?: string | null;
 }
 
 export interface AuthTokens {
-	access_token: string;
-	refresh_token: string;
+  access_token: string;
+  refresh_token: string;
 }
 
 export interface Workspace {
-	id: string;
-	name: string;
-	slug?: string;
-	created_at?: string;
+  id: string;
+  name: string;
+  slug?: string;
+  created_at?: string;
 }
 
 export interface Channel {
-	id: string;
-	name: string;
-	is_private: boolean;
-	topic?: string;
-	workspace_id: string;
+  id: string;
+  name: string;
+  is_private: boolean;
+  topic?: string;
+  workspace_id: string;
 }
 
 export interface Thread {
-	id: string;
-	workspace_id: string;
-	participants: Array<Pick<User, "id" | "display_name" | "avatar_url">>;
-	last_message?: Message;
+  id: string;
+  workspace_id: string;
+  participants: Array<Pick<User, "id" | "display_name" | "avatar_url">>;
+  last_message?: Message;
 }
 
 export interface Message {
-	id: string;
-	client_id?: string;
-	content: string;
-	created_at: string;
-	user_id: string;
-	author: Pick<User, "id" | "display_name" | "avatar_url">;
-	channel_id?: string;
-	thread_id?: string;
+  id: string;
+  client_id?: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  author: Pick<User, "id" | "display_name" | "avatar_url">;
+  channel_id?: string;
+  thread_id?: string;
 }
 
 export interface PresenceUser {
-	user_id: string;
-	display_name?: string;
+  user_id: string;
+  display_name?: string;
 }
 
 export interface UserOnlineStatus {
-	user_id: string;
-	online: boolean;
+  user_id: string;
+  online: boolean;
 }
 
 export interface Session {
-	id: string;
-	created_at: string;
-	last_active_at: string;
-	user_agent: string;
-	ip_address?: string;
-	is_current: boolean;
+  id: string;
+  created_at: string;
+  last_active_at: string;
+  user_agent: string;
+  ip_address?: string;
+  is_current: boolean;
 }
 
 export interface WorkspaceInvite {
-	id: string;
-	workspace_id: string;
-	workspace_name: string;
-	status: "pending" | "accepted" | "declined";
-	inviter: Pick<User, "id" | "display_name" | "avatar_url">;
-	invitee: Pick<User, "id" | "display_name" | "avatar_url">;
-	created_at?: string | null;
+  id: string;
+  workspace_id: string;
+  workspace_name: string;
+  status: "pending" | "accepted" | "declined";
+  inviter: Pick<User, "id" | "display_name" | "avatar_url">;
+  invitee: Pick<User, "id" | "display_name" | "avatar_url">;
+  created_at?: string | null;
 }
 
 export interface FriendRequest {
-	id: string;
-	status: "pending" | "accepted" | "declined";
-	requester: Pick<User, "id" | "display_name" | "avatar_url">;
-	addressee: Pick<User, "id" | "display_name" | "avatar_url">;
-	created_at?: string | null;
-	updated_at?: string | null;
+  id: string;
+  status: "pending" | "accepted" | "declined";
+  requester: Pick<User, "id" | "display_name" | "avatar_url">;
+  addressee: Pick<User, "id" | "display_name" | "avatar_url">;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export type MessagePayload =
-	| { type: "message"; payload: Message }
-	| { type: "typing"; payload: { user_id: string | number; is_typing: boolean } }
-	| { type: "presence"; payload: { user_id: string | number; online: boolean } };
+  | { type: "message"; payload: Message }
+  | {
+      type: "typing";
+      payload: { user_id: string | number; is_typing: boolean };
+    }
+  | {
+      type: "presence";
+      payload: { user_id: string | number; online: boolean };
+    };
 
 export type WsOutgoingPayload =
-	| { type: "typing"; is_typing: boolean }
-	| { type: "message"; content: string; client_id?: string }
-	| { type: "ping" };
+  | { type: "typing"; is_typing: boolean }
+  | { type: "message"; content: string; client_id?: string }
+  | { type: "ping" };
