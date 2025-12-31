@@ -9,6 +9,7 @@
     "dark": "Dark",
     "save": "Save",
     "cancel": "Cancel",
+    "close": "Close",
     "soon": "coming soon",
     "status": {
         "online": "Online",
@@ -16,7 +17,8 @@
         "typing": "typing..."
     },
     "labels": {
-        "id": "id"
+        "id": "id",
+        "from": "from"
     },
     "tabs": {
         "workspaces": "Workspaces",
@@ -30,7 +32,9 @@
         "slugPrompt": "Slug (optional)",
         "active": "Active",
         "select": "Select",
-        "empty": "No workspaces yet."
+        "empty": "No workspaces yet.",
+        "defaultName": "My workspace",
+        "autoCreateError": "Unable to auto-create a workspace: {{message}}"
     },
     "contacts": {
         "title": "Contacts",
@@ -44,10 +48,37 @@
         "noUsersFound": "No users found.",
         "minChars": "Type at least 2 characters."
     },
+    "invites": {
+        "title": "Add friend",
+        "prompt": "Display name to invite",
+        "incoming": "Pending",
+        "outgoing": "Sent",
+        "pending": "Pending",
+        "accept": "Accept",
+        "decline": "Decline",
+        "none": "No invites.",
+        "sent": "Invite sent.",
+        "error": "Unable to send invite: {{message}}"
+    },
+    "notifications": {
+        "friendAccepted": "Your friend request was accepted.",
+        "friendAcceptedBy": "{{name}} accepted your friend request.",
+        "friendDeclined": "Your friend request was declined.",
+        "friendDeclinedBy": "{{name}} declined your friend request.",
+        "workspaceInviteAccepted": "{{name}} accepted your workspace invite to {{workspace}}.",
+        "workspaceInviteAcceptedGeneric": "Your workspace invite was accepted.",
+        "workspaceInviteDeclined": "{{name}} declined your workspace invite to {{workspace}}.",
+        "workspaceInviteDeclinedGeneric": "Your workspace invite was declined."
+    },
+    "loadMore": "Load more",
+    "friends": {
+        "none": "No friends yet."
+    },
     "directMessages": {
         "title": "Direct messages",
         "empty": "No direct messages yet.",
-        "open": "Open"
+        "open": "Open",
+        "searchPlaceholder": "Search recent conversations"
     },
     "protected": {
         "loading": "Loading..."

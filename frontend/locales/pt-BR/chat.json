@@ -3,10 +3,21 @@
         "title": "Selecione um canal",
         "subtitle": "Escolha um canal do workspace ou DM para começar"
     },
+    "header": {
+        "realtime": "As mensagens são sincronizadas em tempo real"
+    },
+    "dm": {
+        "subtitle": "{{code}} • {{status}}",
+        "subtitleNoCode": "{{status}}",
+        "unknownUser": "Mensagem direta"
+    },
+    "userFallback": "Usuário {{id}}",
     "composer": {
         "placeholder": "Mensagem para #{{name}}",
+        "placeholderDm": "Mensagem para @{{name}}",
         "send": "Enviar",
-        "typing": "{{user}} está digitando"
+        "typing": "{{user}} está digitando",
+        "typingMultiple": "{{users}} estão digitando"
     },
     "presence": {
         "title": "Online",

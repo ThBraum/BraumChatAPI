@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,10 @@ type TabKey = "invite" | "friends" | "recent";
 
 const pageSize = 20;
 
-export default function DirectMessagesPage() {
+function DirectMessagesPageInner() {
     const { apiFetch, user } = useAuth();
     const queryClient = useQueryClient();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const { activeWorkspaceId, setActiveThreadId, setActiveChannelId } = useAppShell();
     const { t } = useTranslation(["navigation", "common"]);
@@ -137,6 +138,7 @@ export default function DirectMessagesPage() {
             await queryClient.invalidateQueries({ queryKey: queryKeys.threadsList(activeWorkspaceId) });
             setActiveChannelId(null);
             setActiveThreadId(thread.id);
+            router.push("/app");
         },
     });
 
@@ -220,7 +222,6 @@ export default function DirectMessagesPage() {
                                             >
                                                 <div className="min-w-0">
                                                     <div className="truncate font-medium">{u.display_name}</div>
-                                                    <div className="truncate text-xs text-muted-foreground">id: {u.id}</div>
                                                 </div>
 
                                                 {incomingReq ? (
@@ -377,7 +378,6 @@ export default function DirectMessagesPage() {
                             <li key={u.id} className="flex items-center justify-between rounded-md border px-3 py-2">
                                 <div className="min-w-0">
                                     <div className="truncate font-medium">{u.display_name}</div>
-                                    <div className="truncate text-xs text-muted-foreground">id: {u.id}</div>
                                 </div>
                                 <Button
                                     size="sm"
@@ -427,7 +427,6 @@ export default function DirectMessagesPage() {
                                     <div className="truncate font-medium">
                                         {thread.participants.map((p) => p.display_name).join(", ")}
                                     </div>
-                                    <div className="truncate text-xs text-muted-foreground">thread: {thread.id}</div>
                                 </div>
                                 <Button
                                     size="sm"
@@ -435,6 +434,7 @@ export default function DirectMessagesPage() {
                                     onClick={() => {
                                         setActiveChannelId(null);
                                         setActiveThreadId(thread.id);
+                                        router.push("/app");
                                     }}
                                 >
                                     {t("navigation:directMessagesPage.recent.open")}
@@ -460,5 +460,13 @@ export default function DirectMessagesPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function DirectMessagesPage() {
+    return (
+        <Suspense fallback={null}>
+            <DirectMessagesPageInner />
+        </Suspense>
     );
 }

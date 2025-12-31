@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
@@ -28,7 +28,7 @@ const extractApiDetail = (raw: string): string | null => {
     return null;
 };
 
-export default function RegisterPage() {
+function RegisterPageInner() {
     const formRef = useRef<HTMLFormElement | null>(null);
     const { register: registerUser } = useAuth();
     const router = useRouter();
@@ -139,8 +139,8 @@ export default function RegisterPage() {
                 message: isInvalidCreds
                     ? t("auth:snackbar.invalidCredentials")
                     : isInvalidDisplayName
-                      ? t("auth:register.invalidDisplayName")
-                    : t("auth:snackbar.genericError"),
+                        ? t("auth:register.invalidDisplayName")
+                        : t("auth:snackbar.genericError"),
             });
         } finally {
             setIsSubmitting(false);
@@ -213,8 +213,8 @@ export default function RegisterPage() {
                                 {stats.map((stat) => {
                                     const hasDetail = Boolean(stat.detail);
                                     const cardClasses = `rounded-2xl border border-border/60 bg-card/40 p-6 text-center flex flex-col items-center justify-center min-h-[5.25rem] w-full overflow-hidden ${hasDetail
-                                            ? "max-w-full md:max-w-[14rem] lg:max-w-[20rem]"
-                                            : "max-w-full md:max-w-[11rem] lg:max-w-[14rem]"
+                                        ? "max-w-full md:max-w-[14rem] lg:max-w-[20rem]"
+                                        : "max-w-full md:max-w-[11rem] lg:max-w-[14rem]"
                                         }`;
                                     const numberClasses = `${hasDetail ? "text-lg md:text-xl lg:text-2xl" : "text-xl md:text-2xl lg:text-3xl"} font-semibold leading-tight max-w-full break-words`;
 
@@ -343,5 +343,13 @@ export default function RegisterPage() {
                 <SiteFooter className="border-border/60 px-6 text-muted-foreground lg:px-12" />
             </div>
         </div>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={null}>
+            <RegisterPageInner />
+        </Suspense>
     );
 }

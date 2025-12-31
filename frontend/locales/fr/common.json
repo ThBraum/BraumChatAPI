@@ -1,5 +1,6 @@
 {
     "appName": "ChattingWork",
+    "backendUnavailable": "Backend indisponible à l’adresse {{url}} — certaines fonctionnalités peuvent échouer.",
     "loading": "Chargement...",
     "search": "Rechercher",
     "language": "Langue",
@@ -8,11 +9,79 @@
     "dark": "Sombre",
     "save": "Enregistrer",
     "cancel": "Annuler",
+    "close": "Fermer",
     "soon": "bientôt",
     "status": {
         "online": "En ligne",
         "offline": "Hors ligne",
         "typing": "en train d'écrire..."
+    },
+    "labels": {
+        "id": "id",
+        "from": "de"
+    },
+    "tabs": {
+        "workspaces": "Espaces de travail",
+        "contacts": "Contacts",
+        "directMessages": "Messages directs"
+    },
+    "workspaces": {
+        "title": "Espaces de travail",
+        "create": "Créer",
+        "namePrompt": "Nom de l’espace de travail",
+        "slugPrompt": "Slug (optionnel)",
+        "active": "Actif",
+        "select": "Sélectionner",
+        "empty": "Aucun espace de travail pour le moment.",
+        "defaultName": "Mon espace de travail",
+        "autoCreateError": "Impossible de créer automatiquement un espace de travail : {{message}}"
+    },
+    "contacts": {
+        "title": "Contacts",
+        "searchPlaceholder": "Rechercher par nom d’affichage (min. 2)",
+        "searching": "Recherche...",
+        "invite": "Inviter",
+        "openDm": "Ouvrir un DM",
+        "selectWorkspaceFirst": "Sélectionnez d’abord un espace de travail",
+        "inviteTitle": "Inviter dans l’espace de travail actif",
+        "openDmTitle": "Ouvrir un DM",
+        "noUsersFound": "Aucun utilisateur trouvé.",
+        "minChars": "Saisissez au moins 2 caractères."
+    },
+    "invites": {
+        "title": "Ajouter un ami",
+        "prompt": "Nom d’affichage à inviter",
+        "incoming": "En attente",
+        "outgoing": "Envoyées",
+        "pending": "En attente",
+        "accept": "Accepter",
+        "decline": "Refuser",
+        "none": "Aucune invitation.",
+        "sent": "Invitation envoyée.",
+        "error": "Impossible d’envoyer l’invitation : {{message}}"
+    },
+    "notifications": {
+        "friendAccepted": "Votre demande d’ami a été acceptée.",
+        "friendAcceptedBy": "{{name}} a accepté votre demande d’ami.",
+        "friendDeclined": "Votre demande d’ami a été refusée.",
+        "friendDeclinedBy": "{{name}} a refusé votre demande d’ami.",
+        "workspaceInviteAccepted": "{{name}} a accepté votre invitation à l’espace de travail {{workspace}}.",
+        "workspaceInviteAcceptedGeneric": "Votre invitation à l’espace de travail a été acceptée.",
+        "workspaceInviteDeclined": "{{name}} a refusé votre invitation à l’espace de travail {{workspace}}.",
+        "workspaceInviteDeclinedGeneric": "Votre invitation à l’espace de travail a été refusée."
+    },
+    "loadMore": "Charger plus",
+    "friends": {
+        "none": "Pas encore d'amis."
+    },
+    "directMessages": {
+        "title": "Messages directs",
+        "empty": "Aucun message direct pour le moment.",
+        "open": "Ouvrir",
+        "searchPlaceholder": "Rechercher les conversations récentes"
+    },
+    "protected": {
+        "loading": "Chargement..."
     },
     "placeholders": {
         "search": "Rechercher par nom ou canal"

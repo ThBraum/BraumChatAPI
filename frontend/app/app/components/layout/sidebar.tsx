@@ -27,6 +27,7 @@ const SidebarContent = ({
     activeThreadId,
     onCreateChannel,
     onCreateThread,
+    currentUserId,
 }: {
     channels: Channel[];
     threads: Thread[];
@@ -36,8 +37,28 @@ const SidebarContent = ({
     activeThreadId: string | null;
     onCreateChannel: () => void;
     onCreateThread: () => void;
+    currentUserId: string | null;
 }) => {
-    const { t } = useTranslation(["navigation"]);
+    const { t } = useTranslation(["navigation", "common"]);
+
+    const splitDiscordDisplayName = (displayName: string) => {
+        const idx = displayName.lastIndexOf("#");
+        if (idx > 0 && idx < displayName.length - 1) {
+            return displayName.slice(0, idx);
+        }
+        return displayName;
+    };
+
+    const getThreadLabel = (thread: Thread) => {
+        const participants = thread.participants ?? [];
+        const others = currentUserId
+            ? participants.filter((p) => String(p.id) !== String(currentUserId))
+            : participants;
+        const displayList = (others.length > 0 ? others : participants)
+            .map((p) => splitDiscordDisplayName(p.display_name ?? String(p.id)))
+            .filter(Boolean);
+        return displayList.join(", ") || "Direct Message";
+    };
 
     return (
         <div className="flex h-full flex-col">
@@ -92,7 +113,7 @@ const SidebarContent = ({
                                 >
                                     <MessageSquare className="h-4 w-4" />
                                     <span className="truncate text-left text-sm">
-                                        {thread.participants.map((p) => p.display_name).join(", ")}
+                                        {getThreadLabel(thread)}
                                     </span>
                                 </button>
                             </li>
@@ -110,7 +131,7 @@ const SidebarContent = ({
 };
 
 export const Sidebar = ({ workspaces }: SidebarProps) => {
-    const { apiFetch } = useAuth();
+    const { apiFetch, user } = useAuth();
     const queryClient = useQueryClient();
     const {
         activeWorkspaceId,
@@ -119,7 +140,7 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
         activeThreadId,
         setActiveThreadId,
     } = useAppShell();
-    const { t } = useTranslation(["navigation"]);
+    const { t } = useTranslation(["navigation", "common"]);
     const [open, setOpen] = useState(false);
 
     const channelsQuery = useQuery<Channel[]>({
@@ -129,7 +150,7 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
     });
 
     const threadsQuery = useQuery<Thread[]>({
-        queryKey: queryKeys.threads,
+        queryKey: queryKeys.threadsList(activeWorkspaceId ?? undefined),
         queryFn: () => apiFetch(`/dm/threads?workspace_id=${encodeURIComponent(activeWorkspaceId ?? "")}`),
         enabled: !!activeWorkspaceId,
     });
@@ -155,7 +176,7 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.threads });
+            queryClient.invalidateQueries({ queryKey: queryKeys.threadsList(activeWorkspaceId ?? undefined) });
         },
     });
 
@@ -181,6 +202,7 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
         <SidebarContent
             channels={channels}
             threads={threads}
+            currentUserId={user?.id ? String(user.id) : null}
             onSelectChannel={(id) => {
                 setActiveThreadId(null);
                 setActiveChannelId(id);
@@ -218,7 +240,12 @@ export const Sidebar = ({ workspaces }: SidebarProps) => {
                             {workspaceLabel}
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="left" className="w-72 p-0">
+                    <SheetContent
+                        side="left"
+                        className="w-72 p-0"
+                        title={workspaceLabel}
+                        closeLabel={t("common:close")}
+                    >
                         <div className="border-b px-4 py-3 text-sm font-semibold">{workspaceLabel}</div>
                         {content}
                     </SheetContent>

@@ -2,6 +2,7 @@
     "workspace": "Espace de travail",
     "channels": "Canaux",
     "directMessages": "Messages directs",
+    "invites": "Invitations",
     "createChannel": "Nouveau canal",
     "createThread": "Nouveau DM",
     "profile": "Profil",
@@ -10,8 +11,28 @@
     "presence": "Présence",
     "devices": "Appareils",
     "selectWorkspace": "Sélectionnez un workspace",
+    "workspacesPage": {
+        "title": "Workspaces",
+        "create": "Créer",
+        "active": "Actif",
+        "select": "Sélectionner",
+        "prompts": {
+            "name": "Nom du workspace",
+            "slug": "Slug (optionnel)"
+        },
+        "empty": {
+            "title": "Créez un workspace et invitez vos proches",
+            "subtitle": "Créez un espace pour votre équipe ou communauté, puis invitez des personnes pour collaborer et garder les conversations organisées.",
+            "createWorkspace": "Créer un workspace",
+            "inviteLinkTitle": "Invitez quelqu'un sur {{appName}}",
+            "inviteLinkSubtitle": "Partagez ce lien avec quelqu'un de nouveau. Après l'inscription, la personne peut vous envoyer une demande d'ami automatiquement.",
+            "copyInviteLink": "Copier le lien",
+            "copied": "Copié"
+        }
+    },
     "directMessagesPage": {
         "title": "Messages directs",
+        "loadMore": "Charger plus",
         "tabs": {
             "invite": "Inviter",
             "friends": "Amis",

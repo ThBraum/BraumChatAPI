@@ -9,6 +9,7 @@
     "dark": "Oscuro",
     "save": "Guardar",
     "cancel": "Cancelar",
+    "close": "Cerrar",
     "soon": "muy pronto",
     "status": {
         "online": "En línea",
@@ -16,7 +17,8 @@
         "typing": "escribiendo..."
     },
     "labels": {
-        "id": "id"
+        "id": "id",
+        "from": "de"
     },
     "tabs": {
         "workspaces": "Workspaces",
@@ -30,7 +32,9 @@
         "slugPrompt": "Slug (opcional)",
         "active": "Activo",
         "select": "Seleccionar",
-        "empty": "Aún no hay workspaces."
+        "empty": "Aún no hay workspaces.",
+        "defaultName": "Mi espacio de trabajo",
+        "autoCreateError": "No se pudo crear automáticamente un espacio de trabajo: {{message}}"
     },
     "contacts": {
         "title": "Contactos",
@@ -44,10 +48,37 @@
         "noUsersFound": "No se encontraron usuarios.",
         "minChars": "Escribe al menos 2 caracteres."
     },
+    "invites": {
+        "title": "Agregar amigo",
+        "prompt": "Nombre visible para invitar",
+        "incoming": "Pendientes",
+        "outgoing": "Enviados",
+        "pending": "Pendiente",
+        "accept": "Aceptar",
+        "decline": "Rechazar",
+        "none": "No hay invitaciones.",
+        "sent": "Invitación enviada.",
+        "error": "No se pudo enviar la invitación: {{message}}"
+    },
+    "notifications": {
+        "friendAccepted": "Se aceptó tu solicitud de amistad.",
+        "friendAcceptedBy": "{{name}} aceptó tu solicitud de amistad.",
+        "friendDeclined": "Se rechazó tu solicitud de amistad.",
+        "friendDeclinedBy": "{{name}} rechazó tu solicitud de amistad.",
+        "workspaceInviteAccepted": "{{name}} aceptó tu invitación al espacio de trabajo {{workspace}}.",
+        "workspaceInviteAcceptedGeneric": "Se aceptó tu invitación al espacio de trabajo.",
+        "workspaceInviteDeclined": "{{name}} rechazó tu invitación al espacio de trabajo {{workspace}}.",
+        "workspaceInviteDeclinedGeneric": "Se rechazó tu invitación al espacio de trabajo."
+    },
+    "loadMore": "Cargar más",
+    "friends": {
+        "none": "Aún no tienes amigos."
+    },
     "directMessages": {
         "title": "Mensajes directos",
         "empty": "Aún no hay mensajes directos.",
-        "open": "Abrir"
+        "open": "Abrir",
+        "searchPlaceholder": "Buscar conversaciones recientes"
     },
     "protected": {
         "loading": "Cargando..."

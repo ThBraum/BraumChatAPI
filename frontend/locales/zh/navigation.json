@@ -1,11 +1,41 @@
 {
   "home": "首页",
   "chat": "聊天",
+  "workspace": "工作区",
+  "channels": "频道",
+  "directMessages": "私信",
+  "invites": "邀请",
+  "createChannel": "新建频道",
+  "createThread": "新建私信",
   "profile": "个人资料",
+  "sessions": "会话",
   "settings": "设置",
   "logout": "登出",
+  "presence": "在线状态",
+  "devices": "设备",
+  "selectWorkspace": "请选择一个工作区",
+  "workspacesPage": {
+    "title": "工作区",
+    "create": "创建",
+    "active": "当前",
+    "select": "选择",
+    "prompts": {
+      "name": "工作区名称",
+      "slug": "Slug（可选）"
+    },
+    "empty": {
+      "title": "创建工作区并邀请你的伙伴",
+      "subtitle": "为你的团队或社区创建一个空间，然后邀请成员协作，让对话更有条理。",
+      "createWorkspace": "创建工作区",
+      "inviteLinkTitle": "邀请他人加入 {{appName}}",
+      "inviteLinkSubtitle": "把这个链接分享给新用户。注册后，他们可以自动向你发送好友请求。",
+      "copyInviteLink": "复制链接",
+      "copied": "已复制"
+    }
+  },
   "directMessagesPage": {
     "title": "私信",
+    "loadMore": "加载更多",
     "tabs": {
       "invite": "邀请",
       "friends": "好友",

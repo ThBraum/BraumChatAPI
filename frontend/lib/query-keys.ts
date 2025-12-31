@@ -1,9 +1,11 @@
 export const queryKeys = {
 	profile: ["profile"],
+	usersOnline: (ids: string) => ["users", "online", ids],
 	workspaces: ["workspaces"],
 	incomingInvites: ["invites", "incoming"],
 	friends: (q?: string) => ["friends", q ?? ""],
 	friendRequestsIncoming: ["friends", "requests", "incoming"],
+	friendRequestsIncomingPreview: ["friends", "requests", "incoming", "preview"],
 	friendRequestsOutgoing: ["friends", "requests", "outgoing"],
 	channels: (workspaceId?: string | null) => ["channels", workspaceId],
 	threadsList: (workspaceId?: string | null) => ["threads", "list", workspaceId ?? ""],

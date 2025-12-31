@@ -2,6 +2,7 @@
     "workspace": "Workspace",
     "channels": "Channels",
     "directMessages": "Direct Messages",
+    "invites": "Invites",
     "createChannel": "New channel",
     "createThread": "New DM",
     "profile": "Profile",

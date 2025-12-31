@@ -12,11 +12,27 @@ interface NotificationsSocketOptions {
 export const useNotificationsSocket = ({ token, onMessage }: NotificationsSocketOptions) => {
 	const socketRef = useRef<WebSocket | null>(null);
 	const reconnectRef = useRef<NodeJS.Timeout | null>(null);
+		const pingRef = useRef<NodeJS.Timeout | null>(null);
+	const onMessageRef = useRef<NotificationsSocketOptions["onMessage"]>(onMessage);
+
+	useEffect(() => {
+		onMessageRef.current = onMessage;
+	}, [onMessage]);
 
 	useEffect(() => {
 		if (!token) return;
 
 		const connect = () => {
+			if (reconnectRef.current) {
+				clearTimeout(reconnectRef.current);
+				reconnectRef.current = null;
+			}
+			if (pingRef.current) {
+				clearInterval(pingRef.current);
+				pingRef.current = null;
+			}
+			socketRef.current?.close();
+
 			const url = new URL(`/ws/notifications`, toWsUrl("/"));
 			url.searchParams.set("token", token);
 			const socket = new WebSocket(url);
@@ -25,13 +41,31 @@ export const useNotificationsSocket = ({ token, onMessage }: NotificationsSocket
 			socket.onmessage = (event) => {
 				try {
 					const data = JSON.parse(event.data) as unknown;
-					onMessage?.(data);
+					onMessageRef.current?.(data);
 				} catch (error) {
-					console.error("Invalid WS payload", error);
+					console.warn("Invalid WS payload", error);
 				}
 			};
 
-			socket.onclose = () => {
+			socket.onopen = () => {
+				pingRef.current = setInterval(() => {
+					if (socket.readyState === WebSocket.OPEN) {
+						socket.send("ping");
+					}
+				}, 10_000);
+			};
+
+			socket.onerror = () => {
+				// Avoid Next.js dev overlay (console.error). We'll retry via onclose.
+				console.warn("Notifications WS error");
+			};
+
+			socket.onclose = (event) => {
+				console.warn("Notifications WS closed", { code: event.code, reason: event.reason });
+				if (pingRef.current) {
+					clearInterval(pingRef.current);
+					pingRef.current = null;
+				}
 				reconnectRef.current = setTimeout(connect, 2500);
 			};
 		};
@@ -41,8 +75,9 @@ export const useNotificationsSocket = ({ token, onMessage }: NotificationsSocket
 		return () => {
 			socketRef.current?.close();
 			if (reconnectRef.current) clearTimeout(reconnectRef.current);
+			if (pingRef.current) clearInterval(pingRef.current);
 		};
-	}, [onMessage, token]);
+	}, [token]);
 
 	return {};
 };

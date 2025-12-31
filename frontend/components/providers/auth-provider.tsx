@@ -20,6 +20,7 @@ interface AuthContextValue {
     accessToken: string | null;
     refreshToken: string | null;
     isLoading: boolean;
+    getValidAccessToken: (minTtlSeconds?: number) => Promise<string | null>;
     login: (
         payload: { email: string; password: string },
         options?: {
@@ -43,6 +44,23 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const decodeJwtExp = (token: string): number | null => {
+    try {
+        const parts = token.split(".");
+        if (parts.length < 2) return null;
+        let payloadB64 = parts[1] ?? "";
+        payloadB64 = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+        const pad = (4 - (payloadB64.length % 4)) % 4;
+        if (pad) payloadB64 += "=".repeat(pad);
+
+        const payloadJson = atob(payloadB64);
+        const payload = JSON.parse(payloadJson) as { exp?: number };
+        return typeof payload.exp === "number" ? payload.exp : null;
+    } catch {
+        return null;
+    }
+};
 
 const storeTokens = (tokens: AuthTokens | null) => {
     if (!tokens) {
@@ -136,25 +154,51 @@ export const AuthProvider = ({
         if (!refreshToken) return null;
         if (!refreshPromise.current) {
             refreshPromise.current = (async () => {
-                const response = await fetch(buildUrl("/auth/refresh"), {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ refresh_token: refreshToken }),
-                });
-                if (!response.ok) {
+                try {
+                    const response = await fetch(buildUrl("/auth/refresh"), {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ refresh_token: refreshToken }),
+                    });
+                    if (!response.ok) {
+                        setTokens(null);
+                        setUser(null);
+                        return null;
+                    }
+
+                    const tokens = (await response.json()) as AuthTokens;
+                    if (!tokens?.access_token || !tokens?.refresh_token) {
+                        setTokens(null);
+                        setUser(null);
+                        return null;
+                    }
+                    setTokens(tokens);
+                    return tokens;
+                } catch {
                     setTokens(null);
                     setUser(null);
                     return null;
                 }
-                const tokens = (await response.json()) as AuthTokens;
-                setTokens(tokens);
-                return tokens;
             })().finally(() => {
                 refreshPromise.current = null;
             });
         }
         return refreshPromise.current;
     }, [refreshToken, setTokens]);
+
+    const getValidAccessToken = useCallback(
+        async (minTtlSeconds: number = 60) => {
+            if (!accessToken) return null;
+            const exp = decodeJwtExp(accessToken);
+            if (!exp) return accessToken;
+            const nowSeconds = Math.floor(Date.now() / 1000);
+            if (exp - nowSeconds > minTtlSeconds) return accessToken;
+
+            const refreshed = await refreshSession();
+            return refreshed?.access_token ?? null;
+        },
+        [accessToken, refreshSession],
+    );
 
     const logout = useCallback(async () => {
         setTokens(null);
@@ -279,12 +323,23 @@ export const AuthProvider = ({
             accessToken,
             refreshToken,
             isLoading,
+            getValidAccessToken,
             login,
             register,
             logout,
             apiFetch: handleRequest,
         }),
-        [user, accessToken, refreshToken, isLoading, login, register, logout, handleRequest],
+        [
+            user,
+            accessToken,
+            refreshToken,
+            isLoading,
+            getValidAccessToken,
+            login,
+            register,
+            logout,
+            handleRequest,
+        ],
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

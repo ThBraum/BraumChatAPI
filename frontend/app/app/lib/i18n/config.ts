@@ -23,14 +23,19 @@ import esProfile from "@/locales/es/profile.json";
 
 import frCommon from "@/locales/fr/common.json";
 import frAuth from "@/locales/fr/auth.json";
+import frChat from "@/locales/fr/chat.json";
+import frNav from "@/locales/fr/navigation.json";
+import frProfile from "@/locales/fr/profile.json";
 import deCommon from "@/locales/de/common.json";
 import deAuth from "@/locales/de/auth.json";
+import deChat from "@/locales/de/chat.json";
+import deNav from "@/locales/de/navigation.json";
 import zhCommon from "@/locales/zh/common.json";
 import zhAuth from "@/locales/zh/auth.json";
+import zhChat from "@/locales/zh/chat.json";
+import zhNav from "@/locales/zh/navigation.json";
 
 // Placeholder resources for languages we have not localized yet reuse English strings
-const sharedChat = enChat;
-const sharedNav = enNav;
 const sharedProfile = enProfile;
 
 export const defaultNS = "common";
@@ -60,22 +65,22 @@ const resources = {
 	fr: {
 		common: frCommon,
 		auth: frAuth,
-		chat: sharedChat,
-		navigation: sharedNav,
-		profile: sharedProfile,
+		chat: frChat,
+		navigation: frNav,
+		profile: frProfile,
 	},
 	de: {
 		common: deCommon,
 		auth: deAuth,
-		chat: sharedChat,
-		navigation: sharedNav,
+		chat: deChat,
+		navigation: deNav,
 		profile: sharedProfile,
 	},
 	zh: {
 		common: zhCommon,
 		auth: zhAuth,
-		chat: sharedChat,
-		navigation: sharedNav,
+		chat: zhChat,
+		navigation: zhNav,
 		profile: sharedProfile,
 	},
 } as const;
@@ -94,6 +99,8 @@ export const initI18n = () => {
 				ns: Object.keys(resources.en),
 				defaultNS,
 				supportedLngs,
+				initImmediate: false,
+				react: { useSuspense: false },
 				detection: {
 					order: ["localStorage", "navigator"],
 					caches: ["localStorage"],

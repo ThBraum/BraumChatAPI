@@ -11,6 +11,23 @@ interface MessageListProps {
   messages: Message[];
 }
 
+type AuthorLike = { display_name?: string | null };
+
+const getMessageAuthorDisplayName = (message: Message): string => {
+  const maybe = message as unknown as {
+    author?: AuthorLike;
+    user?: AuthorLike;
+    sender?: AuthorLike;
+  };
+
+  return (
+    maybe.author?.display_name ??
+    maybe.user?.display_name ??
+    maybe.sender?.display_name ??
+    "Unknown"
+  );
+};
+
 const groupByDay = (messages: Message[]) => {
   const groups: Record<string, Message[]> = {};
   messages.forEach((message) => {
@@ -34,12 +51,14 @@ export const MessageList = ({ messages }: MessageListProps) => {
             {dayMessages.map((message) => (
               <li key={message.id} className="flex gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarFallback>{getInitials(message.author.display_name)}</AvatarFallback>
+                  <AvatarFallback>
+                    {getInitials(getMessageAuthorDisplayName(message))}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-foreground">
-                      {message.author.display_name}
+                      {getMessageAuthorDisplayName(message)}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(message.created_at), "HH:mm")}
