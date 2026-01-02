@@ -52,6 +52,12 @@ export const ChatView = ({
         new Map(),
     );
 
+    type DmReadStatus = {
+        thread_id: number;
+        self_last_read_message_id: number;
+        other_last_read_message_id: number;
+    };
+
     const messageScrollRef = useRef<HTMLDivElement | null>(null);
     const messageBottomRef = useRef<HTMLDivElement | null>(null);
     const shouldStickToBottomRef = useRef(true);
@@ -253,6 +259,42 @@ export const ChatView = ({
         return Boolean(row?.online);
     }, [dmOnlineQuery.data]);
 
+    const dmReadStatusKey = useMemo(() => {
+        return threadId ? ["threads", threadId, "read-status"] : ["threads", "noop", "read-status"];
+    }, [threadId]);
+
+    const dmReadStatusQuery = useQuery<DmReadStatus>({
+        queryKey: dmReadStatusKey,
+        queryFn: () => apiFetch(`/dm/threads/${threadId}/read-status`),
+        enabled: !!threadId && !channelId,
+        staleTime: 1000 * 15,
+    });
+
+    // Ao abrir um DM, limpe o badge local (o backend zera ao marcar como lido).
+    useEffect(() => {
+        if (!threadId || channelId) return;
+        queryClient.setQueriesData<Thread[]>({ queryKey: ["threads", "list"] }, (prev) => {
+            const list = prev ?? [];
+            let changed = false;
+            const next = list.map((t) => {
+                if (String(t.id) !== String(threadId)) return t;
+                const current = Number(t.unread_count ?? 0);
+                if (current === 0) return t;
+                changed = true;
+                return { ...t, unread_count: 0 };
+            });
+            return changed ? next : list;
+        });
+    }, [channelId, queryClient, threadId]);
+
+    const getLastNumericMessageId = useCallback((messages: Message[]) => {
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const id = Number(messages[i]?.id);
+            if (Number.isInteger(id) && id > 0) return id;
+        }
+        return null;
+    }, []);
+
     const resolveDisplayName = useCallback(
         (userId: string) => {
             const fromPresence = (presenceQuery.data ?? []).find(
@@ -392,8 +434,95 @@ export const ChatView = ({
             if (payload.type === "presence") {
                 handleIncomingPresence(payload.payload.user_id, payload.payload.online);
             }
+            if (payload.type === "read" && threadId) {
+                const who = payload.payload.user_id;
+                const lastRead = Number(payload.payload.last_read_message_id);
+                if (!Number.isFinite(lastRead) || lastRead <= 0) return;
+
+                queryClient.setQueryData<DmReadStatus>(dmReadStatusKey, (prev) => {
+                    const base: DmReadStatus =
+                        prev ??
+                        {
+                            thread_id: Number(threadId),
+                            self_last_read_message_id: 0,
+                            other_last_read_message_id: 0,
+                        };
+
+                    if (String(who) === String(currentUserId ?? "")) {
+                        return {
+                            ...base,
+                            self_last_read_message_id: Math.max(
+                                base.self_last_read_message_id,
+                                lastRead,
+                            ),
+                        };
+                    }
+                    return {
+                        ...base,
+                        other_last_read_message_id: Math.max(
+                            base.other_last_read_message_id,
+                            lastRead,
+                        ),
+                    };
+                });
+            }
         },
     });
+
+    const markDmRead = useCallback(
+        async (lastReadMessageId: number) => {
+            if (!threadId || channelId) return;
+            if (!Number.isFinite(lastReadMessageId) || lastReadMessageId <= 0) return;
+
+            const sent = dmSocket.send({
+                type: "read",
+                last_read_message_id: lastReadMessageId,
+            });
+            if (!sent) {
+                try {
+                    await apiFetch(`/dm/threads/${threadId}/read`, {
+                        method: "POST",
+                        body: JSON.stringify({ last_read_message_id: lastReadMessageId }),
+                    });
+                } catch {
+                    return;
+                }
+            }
+
+            // Atualiza localmente para evitar piscar até o refetch.
+            queryClient.setQueryData<DmReadStatus>(dmReadStatusKey, (prev) => {
+                const base: DmReadStatus =
+                    prev ??
+                    {
+                        thread_id: Number(threadId),
+                        self_last_read_message_id: 0,
+                        other_last_read_message_id: 0,
+                    };
+                return {
+                    ...base,
+                    self_last_read_message_id: Math.max(
+                        base.self_last_read_message_id,
+                        lastReadMessageId,
+                    ),
+                };
+            });
+
+            queryClient.setQueriesData<Thread[]>({ queryKey: ["threads", "list"] }, (prev) => {
+                const list = prev ?? [];
+                let changed = false;
+                const next = list.map((t) => {
+                    if (String(t.id) !== String(threadId)) return t;
+                    const current = Number(t.unread_count ?? 0);
+                    if (current === 0) return t;
+                    changed = true;
+                    return { ...t, unread_count: 0 };
+                });
+                return changed ? next : list;
+            });
+            queryClient.invalidateQueries({ queryKey: ["threads", "list"] });
+        },
+        [apiFetch, channelId, dmReadStatusKey, dmSocket, queryClient, threadId],
+    );
 
     const shouldPollMessages = useMemo(() => {
         if (channelId) return !channelSocket.isOpen;
@@ -594,10 +723,29 @@ export const ChatView = ({
         const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
         shouldStickToBottomRef.current = distanceToBottom < 64;
 
+        if (shouldStickToBottomRef.current && threadId && !channelId) {
+            const lastId = getLastNumericMessageId(messagesQuery.data ?? []);
+            const selfLast = Number(dmReadStatusQuery.data?.self_last_read_message_id ?? 0);
+            if (lastId && lastId > selfLast) {
+                void markDmRead(lastId);
+            }
+        }
+
         if (!shouldStickToBottomRef.current) {
             captureScrollAnchor();
         }
-    }, [captureScrollAnchor]);
+    }, [captureScrollAnchor, channelId, dmReadStatusQuery.data?.self_last_read_message_id, getLastNumericMessageId, markDmRead, messagesQuery.data, threadId]);
+
+    // Quando estamos no bottom e chegam mensagens novas, marque como lido.
+    useEffect(() => {
+        if (!threadId || channelId) return;
+        if (!shouldStickToBottomRef.current) return;
+        const lastId = getLastNumericMessageId(messagesQuery.data ?? []);
+        if (!lastId) return;
+        const selfLast = Number(dmReadStatusQuery.data?.self_last_read_message_id ?? 0);
+        if (lastId <= selfLast) return;
+        void markDmRead(lastId);
+    }, [channelId, dmReadStatusQuery.data?.self_last_read_message_id, getLastNumericMessageId, markDmRead, messagesQuery.data, threadId]);
 
     // Scroll inicial para o final (mensagens mais recentes embaixo).
     useEffect(() => {
@@ -688,6 +836,11 @@ export const ChatView = ({
                     <MessageList
                         messages={messagesQuery.data ?? []}
                         currentUserId={currentUserId}
+                        otherLastReadMessageId={
+                            threadId
+                                ? Number(dmReadStatusQuery.data?.other_last_read_message_id ?? 0)
+                                : null
+                        }
                     />
                     <div ref={messageBottomRef} />
                 </div>

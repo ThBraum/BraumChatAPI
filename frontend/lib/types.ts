@@ -30,6 +30,7 @@ export interface Thread {
   workspace_id: string;
   participants: Array<Pick<User, "id" | "display_name" | "avatar_url">>;
   last_message?: Message;
+  unread_count?: number;
 }
 
 export interface Message {
@@ -90,9 +91,14 @@ export type MessagePayload =
   | {
       type: "presence";
       payload: { user_id: string | number; online: boolean };
+    }
+  | {
+      type: "read";
+      payload: { user_id: string | number; last_read_message_id: number };
     };
 
 export type WsOutgoingPayload =
   | { type: "typing"; is_typing: boolean }
   | { type: "message"; content: string; client_id?: string }
+  | { type: "read"; last_read_message_id: number }
   | { type: "ping" };
