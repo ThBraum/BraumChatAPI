@@ -14,9 +14,26 @@ class Settings(BaseSettings):
     ENV: str = "development"
     GOOGLE_CLIENT_ID: Optional[str] = None
 
+    # Sessions
+    REQUIRE_SESSION_CLAIM: bool = True
+    SESSION_TOUCH_ENABLED: bool = True
+    SESSION_TOUCH_TTL_SECONDS: int = 300
+
+    # Observability
+    METRICS_ENABLED: bool = True
+
     # Rate limiting (Redis)
     RATE_LIMIT_FAIL_OPEN: bool = True
+    TRUST_PROXY_HEADERS: bool = False
+
+    # Global HTTP rate limit (best-effort)
+    RATE_LIMIT_HTTP_PER_MINUTE: int = 300
+
+    # WebSocket connect rate limit (best-effort)
+    RATE_LIMIT_WS_CONNECT_PER_MINUTE: int = 60
+
     RATE_LIMIT_LOGIN_PER_MINUTE: int = 10
+    RATE_LIMIT_LOGIN_PER_MINUTE_PER_USER: int = 5
     RATE_LIMIT_REFRESH_PER_MINUTE: int = 30
     RATE_LIMIT_REGISTER_PER_HOUR: int = 20
     RATE_LIMIT_POST_MESSAGE_PER_10_SECONDS: int = 20
