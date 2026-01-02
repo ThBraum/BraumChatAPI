@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .api.routes import auth as auth_router
 from .api.routes import channels as channels_router
@@ -10,7 +12,12 @@ from .api.routes import messages as messages_router
 from .api.routes import realtime as realtime_router
 from .api.routes import users as users_router
 from .api.routes import workspaces as workspaces_router
+from .api.deps import get_db_dep
 from .config import get_settings
+from .db.redis import redis as redis_client
+from .observability.metrics import render_metrics
+from .observability.middleware import PrometheusMiddleware
+from .security.http_rate_limit_middleware import HttpRateLimitMiddleware
 
 
 def create_app() -> FastAPI:
@@ -20,12 +27,26 @@ def create_app() -> FastAPI:
 
     origins = [o.strip() for o in (settings.CORS_ORIGINS or "").split(",") if o.strip()]
     app.add_middleware(
+        HttpRateLimitMiddleware,
+        redis=redis_client,
+        settings=settings,
+        exempt_paths={"/health", "/healthz", "/readyz", "/metrics"},
+    )
+
+    app.add_middleware(
         CORSMiddleware,
         allow_origins=origins or ["http://localhost:3000"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    if getattr(settings, "METRICS_ENABLED", True):
+        app.add_middleware(PrometheusMiddleware, excluded_paths={"/metrics"})
+
+        @app.get("/metrics", include_in_schema=False)
+        async def metrics():
+            return render_metrics()
 
     app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
     app.include_router(users_router.router)
@@ -42,9 +63,22 @@ def create_app() -> FastAPI:
     async def health():
         return {"status": "ok"}
 
+    @app.get("/healthz", tags=["health"])
+    async def healthz():
+        return {"status": "ok"}
+
     @app.get("/heath", tags=["health"])
     async def heath():
         return {"status": "ok"}
+
+    @app.get("/readyz", tags=["health"])
+    async def readyz(db: AsyncSession = Depends(get_db_dep)):
+        try:
+            await db.execute(text("SELECT 1"))
+            await redis_client.ping()
+        except Exception:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return {"status": "ok", "db": "ok", "redis": "ok"}
 
     return app
 
