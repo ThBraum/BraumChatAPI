@@ -10,7 +10,7 @@ from ...db.redis import redis as redis_client
 from ...realtime.manager import manager
 from ...security.client import get_client_ip_from_scope
 from ...security.rate_limit import RateLimitRule, enforce_rate_limit
-from ...services import direct_message_service, presence_service
+from ...services import direct_message_service, dm_state_service, presence_service
 from ...services.message_service import create_message
 
 router = APIRouter()
@@ -37,9 +37,7 @@ async def ws_notifications(
         await enforce_rate_limit(
             redis=redis_client,
             key=f"rl:ws:connect:ip:{ip}",
-            rule=RateLimitRule(
-                limit=settings.RATE_LIMIT_WS_CONNECT_PER_MINUTE, window_seconds=60
-            ),
+            rule=RateLimitRule(limit=settings.RATE_LIMIT_WS_CONNECT_PER_MINUTE, window_seconds=60),
             fail_open=settings.RATE_LIMIT_FAIL_OPEN,
         )
     except Exception:
@@ -116,9 +114,7 @@ async def ws_channel(
         await enforce_rate_limit(
             redis=redis_client,
             key=f"rl:ws:connect:ip:{ip}",
-            rule=RateLimitRule(
-                limit=settings.RATE_LIMIT_WS_CONNECT_PER_MINUTE, window_seconds=60
-            ),
+            rule=RateLimitRule(limit=settings.RATE_LIMIT_WS_CONNECT_PER_MINUTE, window_seconds=60),
             fail_open=settings.RATE_LIMIT_FAIL_OPEN,
         )
     except Exception:
@@ -226,6 +222,7 @@ async def ws_channel(
                         "type": "typing",
                         "payload": {
                             "user_id": user_id,
+                            "display_name": user_display_name,
                             "is_typing": bool(data.get("is_typing", True)),
                         },
                     },
@@ -256,9 +253,7 @@ async def ws_direct_message(
         await enforce_rate_limit(
             redis=redis_client,
             key=f"rl:ws:connect:ip:{ip}",
-            rule=RateLimitRule(
-                limit=settings.RATE_LIMIT_WS_CONNECT_PER_MINUTE, window_seconds=60
-            ),
+            rule=RateLimitRule(limit=settings.RATE_LIMIT_WS_CONNECT_PER_MINUTE, window_seconds=60),
             fail_open=settings.RATE_LIMIT_FAIL_OPEN,
         )
     except Exception:
@@ -298,6 +293,10 @@ async def ws_direct_message(
         await websocket.close(code=1008)
         return
 
+    # Cache thread participant IDs before rollback expires ORM attributes.
+    thread_user1_id = int(thread.user1_id)
+    thread_user2_id = int(thread.user2_id)
+
     await db.rollback()
 
     channel_key = f"dm:{thread_id}"
@@ -313,6 +312,8 @@ async def ws_direct_message(
             "payload": {"user_id": user_id, "online": True},
         },
     )
+
+    other_user_id = thread_user2_id if thread_user1_id == int(user_id) else thread_user1_id
 
     try:
         while True:
@@ -363,6 +364,25 @@ async def ws_direct_message(
 
                 await manager.broadcast(channel_key, {"type": "message", "payload": payload})
 
+                # Unread + notifications for the other participant (best-effort)
+                try:
+                    if manager.user_connection_count(channel_key, int(other_user_id)) == 0:
+                        await dm_state_service.increment_unread(
+                            redis_client,
+                            user_id=int(other_user_id),
+                            thread_id=int(thread_id),
+                            delta=1,
+                        )
+                        await manager.broadcast(
+                            f"notify:{int(other_user_id)}",
+                            {
+                                "type": "dm.unread",
+                                "payload": {"thread_id": int(thread_id), "delta": 1},
+                            },
+                        )
+                except Exception:
+                    pass
+
                 # `create_direct_message()` ends with a SELECT; rollback to release locks.
                 await db.rollback()
             elif msg_type == "typing":
@@ -384,7 +404,39 @@ async def ws_direct_message(
                         "type": "typing",
                         "payload": {
                             "user_id": user_id,
+                            "display_name": user_display_name,
                             "is_typing": bool(data.get("is_typing", True)),
+                        },
+                    },
+                )
+            elif msg_type == "read":
+                last_read = data.get("last_read_message_id")
+                try:
+                    last_read_int = int(last_read)
+                except (TypeError, ValueError):
+                    continue
+                if last_read_int <= 0:
+                    continue
+                try:
+                    last_read_int = await dm_state_service.set_last_read(
+                        redis_client,
+                        user_id=int(user_id),
+                        thread_id=int(thread_id),
+                        message_id=int(last_read_int),
+                    )
+                    await dm_state_service.clear_unread(
+                        redis_client, user_id=int(user_id), thread_id=int(thread_id)
+                    )
+                except Exception:
+                    pass
+
+                await manager.broadcast(
+                    channel_key,
+                    {
+                        "type": "read",
+                        "payload": {
+                            "user_id": int(user_id),
+                            "last_read_message_id": int(last_read_int),
                         },
                     },
                 )

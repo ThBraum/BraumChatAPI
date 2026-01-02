@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { useAppShell } from "@/components/providers/app-shell-provider";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -150,6 +151,15 @@ const SidebarContent = ({
                                     <span className="truncate text-left text-sm">
                                         {getThreadLabel(thread)}
                                     </span>
+                                    {Number(thread.unread_count ?? 0) > 0 &&
+                                        activeThreadId !== thread.id && (
+                                            <Badge
+                                                variant="secondary"
+                                                className="ml-auto shrink-0"
+                                            >
+                                                {Number(thread.unread_count ?? 0)}
+                                            </Badge>
+                                        )}
                                 </button>
                             </li>
                         ))}

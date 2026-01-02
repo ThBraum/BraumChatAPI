@@ -15,7 +15,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Snackbar } from "@/components/ui/snackbar";
 import { useNotificationsSocket } from "@/hooks/use-notifications-socket";
 import { useWsToken } from "@/hooks/use-ws-token";
-import type { Workspace } from "@/lib/types";
+import type { Thread, Workspace } from "@/lib/types";
 import { queryKeys } from "@/lib/query-keys";
 import { API_BASE_URL } from "@/lib/utils";
 
@@ -178,6 +178,32 @@ const ShellViewport = ({ children }: { children: React.ReactNode }) => {
       const typed = message as { type?: string; payload?: unknown };
       const type = typed.type;
       if (!type) return;
+
+      if (type === "dm.unread") {
+        const payload = typed.payload as
+          | { thread_id?: string | number; delta?: number }
+          | undefined;
+        const threadId = payload?.thread_id;
+        const delta = Number(payload?.delta ?? 1);
+
+        if (threadId != null && Number.isFinite(delta) && delta !== 0) {
+          queryClient.setQueriesData<Thread[]>({ queryKey: ["threads", "list"] }, (prev) => {
+            const list = prev ?? [];
+            let changed = false;
+            const next = list.map((t) => {
+              if (String(t.id) !== String(threadId)) return t;
+              const current = Number(t.unread_count ?? 0);
+              const updated = Math.max(0, current + delta);
+              if (updated === current) return t;
+              changed = true;
+              return { ...t, unread_count: updated };
+            });
+            return changed ? next : list;
+          });
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["threads", "list"] });
+      }
       if (type.startsWith("invite.")) {
         queryClient.invalidateQueries({ queryKey: queryKeys.incomingInvites });
         queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });

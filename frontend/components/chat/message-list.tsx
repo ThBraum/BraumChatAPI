@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo } from "react";
 import { format } from "date-fns";
+import { CheckCheck } from "lucide-react";
 
 import type { Message } from "@/lib/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -10,6 +11,7 @@ import { cn, getInitials } from "@/lib/utils";
 interface MessageListProps {
   messages: Message[];
   currentUserId?: string | null;
+  otherLastReadMessageId?: number | null;
 }
 
 type AuthorLike = { display_name?: string | null };
@@ -45,8 +47,23 @@ const groupByDay = (messages: Message[]) => {
   return groups;
 };
 
-export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
+export const MessageList = ({
+  messages,
+  currentUserId,
+  otherLastReadMessageId,
+}: MessageListProps) => {
   const grouped = useMemo(() => groupByDay(messages), [messages]);
+
+  const lastOwnNumericMessageId = useMemo(() => {
+    if (!currentUserId) return null;
+    let maxId = 0;
+    for (const message of messages) {
+      if (String(message.user_id) !== String(currentUserId)) continue;
+      const id = Number(message.id);
+      if (Number.isInteger(id) && id > maxId) maxId = id;
+    }
+    return maxId > 0 ? maxId : null;
+  }, [currentUserId, messages]);
 
   const orderedDays = useMemo(() => {
     return Object.keys(grouped).sort((a, b) => a.localeCompare(b));
@@ -64,6 +81,15 @@ export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
               const isOwn =
                 currentUserId != null &&
                 String(message.user_id) === String(currentUserId);
+
+              const numericId = Number(message.id);
+              const showReadReceipt =
+                isOwn &&
+                otherLastReadMessageId != null &&
+                lastOwnNumericMessageId != null &&
+                Number.isInteger(numericId) &&
+                numericId === lastOwnNumericMessageId &&
+                otherLastReadMessageId >= lastOwnNumericMessageId;
 
               return (
                 <li
@@ -101,6 +127,9 @@ export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(message.created_at), "HH:mm")}
                       </span>
+                      {showReadReceipt && (
+                        <CheckCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                      )}
                     </div>
                     <p
                       className={cn(
