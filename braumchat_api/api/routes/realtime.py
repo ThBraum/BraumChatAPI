@@ -5,12 +5,17 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.deps import get_db_dep
+from ...config import get_settings
 from ...db.redis import redis as redis_client
 from ...realtime.manager import manager
+from ...security.client import get_client_ip_from_scope
+from ...security.rate_limit import RateLimitRule, enforce_rate_limit
 from ...services import direct_message_service, presence_service
 from ...services.message_service import create_message
 
 router = APIRouter()
+
+settings = get_settings()
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +30,22 @@ async def ws_notifications(
     websocket: WebSocket,
     db: AsyncSession = Depends(get_db_dep),
 ):
+    try:
+        ip = get_client_ip_from_scope(
+            websocket.scope, trust_proxy_headers=settings.TRUST_PROXY_HEADERS
+        )
+        await enforce_rate_limit(
+            redis=redis_client,
+            key=f"rl:ws:connect:ip:{ip}",
+            rule=RateLimitRule(
+                limit=settings.RATE_LIMIT_WS_CONNECT_PER_MINUTE, window_seconds=60
+            ),
+            fail_open=settings.RATE_LIMIT_FAIL_OPEN,
+        )
+    except Exception:
+        await websocket.close(code=1008)
+        return
+
     token = websocket.query_params.get("token")
     if not token:
         await websocket.close(code=1008)
@@ -35,6 +56,8 @@ async def ws_notifications(
         from ...services.user_service import get_user
 
         payload = decode_token(token)
+        if payload.get("typ") == "refresh":
+            raise ValueError()
         user_id = int(payload.get("sub"))
         user = await get_user(db, user_id)
         if not user:
@@ -86,6 +109,22 @@ async def ws_channel(
     channel_id: int,
     db: AsyncSession = Depends(get_db_dep),
 ):
+    try:
+        ip = get_client_ip_from_scope(
+            websocket.scope, trust_proxy_headers=settings.TRUST_PROXY_HEADERS
+        )
+        await enforce_rate_limit(
+            redis=redis_client,
+            key=f"rl:ws:connect:ip:{ip}",
+            rule=RateLimitRule(
+                limit=settings.RATE_LIMIT_WS_CONNECT_PER_MINUTE, window_seconds=60
+            ),
+            fail_open=settings.RATE_LIMIT_FAIL_OPEN,
+        )
+    except Exception:
+        await websocket.close(code=1008)
+        return
+
     token = websocket.query_params.get("token")
     if not token:
         await websocket.close(code=1008)  # policy violation
@@ -96,6 +135,8 @@ async def ws_channel(
         from ...services.user_service import get_user
 
         payload = decode_token(token)
+        if payload.get("typ") == "refresh":
+            raise ValueError()
         user_id = int(payload.get("sub"))
         user = await get_user(db, user_id)
         if not user:
@@ -208,6 +249,22 @@ async def ws_direct_message(
     thread_id: int,
     db: AsyncSession = Depends(get_db_dep),
 ):
+    try:
+        ip = get_client_ip_from_scope(
+            websocket.scope, trust_proxy_headers=settings.TRUST_PROXY_HEADERS
+        )
+        await enforce_rate_limit(
+            redis=redis_client,
+            key=f"rl:ws:connect:ip:{ip}",
+            rule=RateLimitRule(
+                limit=settings.RATE_LIMIT_WS_CONNECT_PER_MINUTE, window_seconds=60
+            ),
+            fail_open=settings.RATE_LIMIT_FAIL_OPEN,
+        )
+    except Exception:
+        await websocket.close(code=1008)
+        return
+
     token = websocket.query_params.get("token")
     if not token:
         await websocket.close(code=1008)
@@ -218,6 +275,8 @@ async def ws_direct_message(
         from ...services.user_service import get_user
 
         payload = decode_token(token)
+        if payload.get("typ") == "refresh":
+            raise ValueError()
         user_id = int(payload.get("sub"))
         user = await get_user(db, user_id)
         if not user:

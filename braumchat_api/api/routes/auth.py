@@ -10,6 +10,7 @@ from ...config import get_settings
 from ...db.redis import redis as redis_client
 from ...schemas.auth import LogoutRequest, Token, TokenRefreshRequest, UserSessionRead
 from ...schemas.user import UserCreate, UserRead
+from ...security.client import get_client_ip
 from ...security.rate_limit import RateLimitRule, enforce_rate_limit
 from ...security.security import decode_token
 from ...services import session_service
@@ -32,7 +33,7 @@ async def register(
     db: AsyncSession = Depends(get_db_dep),
 ):
     # Rate limit por IP (best-effort)
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request, trust_proxy_headers=settings.TRUST_PROXY_HEADERS)
     await enforce_rate_limit(
         redis=redis_client,
         key=f"rl:auth:register:ip:{client_ip}",
@@ -66,11 +67,19 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db_dep),
 ):
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request, trust_proxy_headers=settings.TRUST_PROXY_HEADERS)
     await enforce_rate_limit(
         redis=redis_client,
         key=f"rl:auth:login:ip:{client_ip}",
         rule=RateLimitRule(limit=settings.RATE_LIMIT_LOGIN_PER_MINUTE, window_seconds=60),
+        fail_open=settings.RATE_LIMIT_FAIL_OPEN,
+    )
+    await enforce_rate_limit(
+        redis=redis_client,
+        key=f"rl:auth:login:ip:{client_ip}:u:{form_data.username.strip().lower()}",
+        rule=RateLimitRule(
+            limit=settings.RATE_LIMIT_LOGIN_PER_MINUTE_PER_USER, window_seconds=60
+        ),
         fail_open=settings.RATE_LIMIT_FAIL_OPEN,
     )
     user = await authenticate_user(db, form_data.username, form_data.password)
@@ -79,7 +88,9 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect credentials"
         )
     session_id = str(uuid4())
-    client_ip = request.client.host if request.client else None
+    client_ip = get_client_ip(request, trust_proxy_headers=settings.TRUST_PROXY_HEADERS)
+    if client_ip == "unknown":
+        client_ip = None
     user_agent = request.headers.get("user-agent")
     await session_service.create_session(
         db,
@@ -102,7 +113,7 @@ async def refresh(
     payload: TokenRefreshRequest,
     db: AsyncSession = Depends(get_db_dep),
 ):
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request, trust_proxy_headers=settings.TRUST_PROXY_HEADERS)
     await enforce_rate_limit(
         redis=redis_client,
         key=f"rl:auth:refresh:ip:{client_ip}",
@@ -111,9 +122,15 @@ async def refresh(
     )
     try:
         token_payload = decode_token(payload.refresh_token)
+        token_type = token_payload.get("typ")
         user_id = int(token_payload.get("sub"))
         session_id = token_payload.get("sid")
     except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
+
+    if token_type is not None and token_type != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
         )
@@ -160,9 +177,15 @@ async def logout(
     if payload and payload.refresh_token:
         try:
             token_payload = decode_token(payload.refresh_token)
+            token_type = token_payload.get("typ")
             token_user_id = int(token_payload.get("sub"))
             token_sid = token_payload.get("sid")
         except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+            )
+
+        if token_type is not None and token_type != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
             )
@@ -180,10 +203,12 @@ async def logout(
                 token_payload = decode_token(token)
                 token_user_id = int(token_payload.get("sub"))
                 token_sid = token_payload.get("sid")
+                token_type = token_payload.get("typ")
             except Exception:
                 token_user_id = None
                 token_sid = None
-            if token_user_id == user.id and token_sid:
+                token_type = None
+            if token_type != "refresh" and token_user_id == user.id and token_sid:
                 session_id = str(token_sid)
 
     if session_id:
