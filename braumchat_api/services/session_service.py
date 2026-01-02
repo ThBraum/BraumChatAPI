@@ -60,6 +60,27 @@ async def touch_session(db: AsyncSession, session_id: str) -> None:
         await db.commit()
 
 
+async def touch_session_if_due(
+    db: AsyncSession,
+    *,
+    redis,
+    session_id: str,
+    ttl_seconds: int,
+) -> None:
+    """Atualiza last_seen_at no máximo 1x por `ttl_seconds` por sessão."""
+
+    if ttl_seconds <= 0:
+        return
+
+    try:
+        key = f"sess:touch:{session_id}"
+        should_touch = await redis.set(key, "1", ex=ttl_seconds, nx=True)
+        if should_touch:
+            await touch_session(db, session_id)
+    except Exception:
+        return
+
+
 async def rotate_session(
     db: AsyncSession,
     *,
