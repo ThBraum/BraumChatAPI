@@ -18,7 +18,7 @@ export const toWsUrl = (path: string) => {
   let base: URL;
   try {
     base = new URL(API_BASE_URL);
-  } catch (err) {
+  } catch {
     base = new URL("http://localhost:8000");
   }
 
@@ -28,7 +28,7 @@ export const toWsUrl = (path: string) => {
 };
 
 export const formatTimestamp = (value: string) =>
-  new Intl.DateTimeFormat("en", {
+  new Intl.DateTimeFormat(undefined, {
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",

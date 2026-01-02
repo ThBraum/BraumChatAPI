@@ -63,6 +63,7 @@ export const ChatView = ({
 
     const messageScrollRef = useRef<HTMLDivElement | null>(null);
     const messageBottomRef = useRef<HTMLDivElement | null>(null);
+    const composerContainerRef = useRef<HTMLDivElement | null>(null);
     const shouldStickToBottomRef = useRef(true);
     const didInitialScrollRef = useRef<string | null>(null);
     const scrollAnchorMessageIdRef = useRef<string | null>(null);
@@ -99,9 +100,37 @@ export const ChatView = ({
     const scrollToBottom = useCallback(() => {
         const el = messageScrollRef.current;
         if (!el) return;
+        // Força o scroll até o final do container (clampado pelo browser).
         el.scrollTop = el.scrollHeight;
+        el.scrollTo?.({ top: el.scrollHeight, behavior: "auto" });
+        const bottom = messageBottomRef.current;
+        if (bottom?.scrollIntoView) {
+            bottom.scrollIntoView({ block: "end" });
+        }
+
+        // Além de levar a lista até o final, garanta que o compositor/input
+        // também esteja visível no viewport (útil quando há scroll na página).
+        const composerEl = composerContainerRef.current;
+        if (composerEl?.scrollIntoView) {
+            composerEl.scrollIntoView({ block: "end" });
+        }
         shouldStickToBottomRef.current = true;
     }, []);
+
+    const ensureAtBottom = useCallback(() => {
+        let frames = 0;
+        const tick = () => {
+            const el = messageScrollRef.current;
+            if (!el) return;
+            const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+            if (distanceToBottom <= 2) return;
+            if (frames >= 12) return;
+            frames += 1;
+            scrollToBottom();
+            requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }, [scrollToBottom]);
 
     const sortMessagesAsc = useCallback((messages: Message[]) => {
         return [...messages].sort((a, b) => {
@@ -694,10 +723,14 @@ export const ChatView = ({
         }
 
         if (threadId) {
-            const name =
+            const title =
+                dmOtherParticipant?.display_name ??
+                dmOtherParts?.name ??
+                t("chat:dm.unknownUser", { defaultValue: "Direct Message" });
+            const nameForComposer =
                 dmOtherParts?.name ??
                 dmOtherParticipant?.display_name ??
-                t("chat:dm.unknownUser", { defaultValue: "Direct Message" });
+                title;
             const status = dmIsOnline
                 ? t("common:status.online")
                 : t("common:status.offline");
@@ -707,10 +740,10 @@ export const ChatView = ({
             });
 
             return {
-                title: name,
+                title,
                 subtitle,
                 placeholder: t("chat:composer.placeholderDm", {
-                    name,
+                    name: nameForComposer,
                     defaultValue: "Message @{{name}}",
                 }),
             };
@@ -762,7 +795,8 @@ export const ChatView = ({
     }, [channelId, dmReadStatusQuery.data?.self_last_read_message_id, getLastNumericMessageId, markDmRead, messagesQuery.data, threadId]);
 
     // Scroll inicial para o final (mensagens mais recentes embaixo).
-    useEffect(() => {
+    // useLayoutEffect ajuda a garantir que o scroll já esteja no final antes de pintar.
+    useLayoutEffect(() => {
         const key = channelId
             ? `c:${channelId}`
             : threadId
@@ -776,10 +810,14 @@ export const ChatView = ({
         scrollAnchorMessageIdRef.current = null;
 
         didInitialScrollRef.current = key;
-        requestAnimationFrame(() => {
+        scrollToBottom();
+        requestAnimationFrame(() => scrollToBottom());
+        // Em alguns casos (fontes/altura mudando), um terceiro tick garante o bottom.
+        setTimeout(() => {
             scrollToBottom();
-        });
-    }, [channelId, messagesQuery.isLoading, scrollToBottom, threadId]);
+            ensureAtBottom();
+        }, 0);
+    }, [channelId, ensureAtBottom, messagesQuery.isLoading, scrollToBottom, threadId]);
 
     // Mantém no final quando novas mensagens chegam (se usuário já estava no final).
     useEffect(() => {
@@ -845,21 +883,23 @@ export const ChatView = ({
                 <div
                     ref={messageScrollRef}
                     onScroll={handleMessageScroll}
-                    className="mt-4 flex-1 overflow-y-auto"
+                    className="mt-4 flex flex-1 flex-col overflow-y-auto pb-4"
                 >
-                    <MessageList
-                        messages={messagesQuery.data ?? []}
-                        currentUserId={currentUserId}
-                        otherLastReadMessageId={
-                            threadId
-                                ? Number(dmReadStatusQuery.data?.other_last_read_message_id ?? 0)
-                                : null
-                        }
-                    />
-                    <div ref={messageBottomRef} />
+                    <div className="mt-auto">
+                        <MessageList
+                            messages={messagesQuery.data ?? []}
+                            currentUserId={currentUserId}
+                            otherLastReadMessageId={
+                                threadId
+                                    ? Number(dmReadStatusQuery.data?.other_last_read_message_id ?? 0)
+                                    : null
+                            }
+                        />
+                        <div ref={messageBottomRef} className="h-px" />
+                    </div>
                 </div>
 
-                <div className="mt-4 shrink-0">
+                <div ref={composerContainerRef} className="mt-4 shrink-0">
                     {typingUserIds.length > 0 && (
                         <p className="mb-1 text-xs text-muted-foreground">
                             {typingUserIds.length === 1
