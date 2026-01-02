@@ -86,7 +86,11 @@ export type MessagePayload =
   | { type: "message"; payload: Message }
   | {
       type: "typing";
-      payload: { user_id: string | number; is_typing: boolean };
+      payload: {
+        user_id: string | number;
+        display_name?: string;
+        is_typing: boolean;
+      };
     }
   | {
       type: "presence";

@@ -48,6 +48,9 @@ export const ChatView = ({
     const currentUserId = user?.id ?? null;
     const wsToken = useWsToken(Boolean(accessToken));
     const [typingUserIds, setTypingUserIds] = useState<string[]>([]);
+    const [typingDisplayNames, setTypingDisplayNames] = useState<Record<string, string>>(
+        {},
+    );
     const typingTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
         new Map(),
     );
@@ -297,6 +300,8 @@ export const ChatView = ({
 
     const resolveDisplayName = useCallback(
         (userId: string) => {
+            const fromTyping = typingDisplayNames[userId];
+            if (fromTyping) return fromTyping;
             const fromPresence = (presenceQuery.data ?? []).find(
                 (u) => u.user_id === userId,
             )?.display_name;
@@ -307,11 +312,11 @@ export const ChatView = ({
             if (fromMessages) return fromMessages;
             return t("chat:userFallback", { id: userId });
         },
-        [messagesQuery.data, presenceQuery.data, t],
+        [messagesQuery.data, presenceQuery.data, t, typingDisplayNames],
     );
 
     const handleIncomingTyping = useCallback(
-        (userId: string | number, isTyping: boolean) => {
+        (userId: string | number, isTyping: boolean, displayName?: string) => {
             const normalizedUserId = String(userId);
 
             // ignore self-typing if echoed
@@ -326,6 +331,13 @@ export const ChatView = ({
                     prev.filter((id) => id !== normalizedUserId),
                 );
                 return;
+            }
+
+            if (displayName && displayName.trim()) {
+                setTypingDisplayNames((prev) => {
+                    if (prev[normalizedUserId] === displayName) return prev;
+                    return { ...prev, [normalizedUserId]: displayName };
+                });
             }
 
             setTypingUserIds((prev) =>
@@ -388,6 +400,7 @@ export const ChatView = ({
                 handleIncomingTyping(
                     payload.payload.user_id,
                     payload.payload.is_typing,
+                    payload.payload.display_name,
                 );
             }
         },
@@ -429,6 +442,7 @@ export const ChatView = ({
                 handleIncomingTyping(
                     payload.payload.user_id,
                     payload.payload.is_typing,
+                    payload.payload.display_name,
                 );
             }
             if (payload.type === "presence") {

@@ -222,6 +222,7 @@ async def ws_channel(
                         "type": "typing",
                         "payload": {
                             "user_id": user_id,
+                            "display_name": user_display_name,
                             "is_typing": bool(data.get("is_typing", True)),
                         },
                     },
@@ -292,6 +293,10 @@ async def ws_direct_message(
         await websocket.close(code=1008)
         return
 
+    # Cache thread participant IDs before rollback expires ORM attributes.
+    thread_user1_id = int(thread.user1_id)
+    thread_user2_id = int(thread.user2_id)
+
     await db.rollback()
 
     channel_key = f"dm:{thread_id}"
@@ -308,7 +313,7 @@ async def ws_direct_message(
         },
     )
 
-    other_user_id = thread.user2_id if int(thread.user1_id) == int(user_id) else thread.user1_id
+    other_user_id = thread_user2_id if thread_user1_id == int(user_id) else thread_user1_id
 
     try:
         while True:
@@ -399,6 +404,7 @@ async def ws_direct_message(
                         "type": "typing",
                         "payload": {
                             "user_id": user_id,
+                            "display_name": user_display_name,
                             "is_typing": bool(data.get("is_typing", True)),
                         },
                     },
